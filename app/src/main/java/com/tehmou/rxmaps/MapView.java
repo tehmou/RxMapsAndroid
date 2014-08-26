@@ -8,6 +8,9 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
+import rx.functions.Action0;
+import rx.functions.Action1;
+
 /**
  * Created by ttuo on 26/08/14.
  */
@@ -33,10 +36,17 @@ public class MapView extends View {
         this.setBackgroundColor(Color.BLUE);
     }
 
-    public void setBitmap(Bitmap bitmap) {
-        this.bitmap = bitmap;
-        this.invalidate();
+    public void setViewModel(final MapViewModel mapViewModel) {
+        mapViewModel.getBitmap().subscribe(setBitmap);
     }
+
+    final private Action1<Bitmap> setBitmap = new Action1<Bitmap>() {
+        @Override
+        public void call(Bitmap bitmap) {
+            MapView.this.bitmap = bitmap;
+            invalidate();
+        }
+    };
 
     @Override
     protected void onDraw(Canvas canvas) {

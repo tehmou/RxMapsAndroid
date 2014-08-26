@@ -46,21 +46,7 @@ public class MapFragment extends Fragment {
         NetworkClientOkHttp networkClient = new NetworkClientOkHttp();
         MapNetworkAdapter mapNetworkClient =
                 new MapNetworkAdapterSimple(networkClient, getUrlFormat());
-        mapNetworkClient.getMapTile(0, 0, 0)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Bitmap>() {
-                    @Override
-                    public void onCompleted() { }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onNext(Bitmap bitmap) {
-                        mapView.setBitmap(bitmap);
-                    }
-                });
+        MapViewModel mapViewModel = new MapViewModel(mapNetworkClient);
+        mapView.setViewModel(mapViewModel);
     }
 }
