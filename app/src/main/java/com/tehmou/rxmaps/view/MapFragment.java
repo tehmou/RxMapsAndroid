@@ -1,8 +1,6 @@
-package com.tehmou.rxmaps;
+package com.tehmou.rxmaps.view;
 
 import android.app.Fragment;
-import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,9 +9,6 @@ import android.view.ViewGroup;
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.network.MapNetworkAdapterSimple;
 import com.tehmou.rxmaps.network.NetworkClientOkHttp;
-
-import rx.Observer;
-import rx.android.schedulers.AndroidSchedulers;
 
 /**
  * Created by ttuo on 26/08/14.

@@ -1,4 +1,4 @@
-package com.tehmou.rxmaps;
+package com.tehmou.rxmaps.view;
 
 import android.graphics.Bitmap;
 
