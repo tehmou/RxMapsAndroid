@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.network.MapNetworkAdapterSimple;
@@ -21,7 +20,7 @@ import rx.android.schedulers.AndroidSchedulers;
  */
 public class MapFragment extends Fragment {
     private final static String URL_FORMAT_KEY = "urlFormat";
-    private ImageView imageView;
+    private MapView mapView;
 
     public static MapFragment newInstance(final String urlFormat) {
         final MapFragment mapFragment = new MapFragment();
@@ -37,9 +36,8 @@ public class MapFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        this.imageView = new ImageView(getActivity());
-        imageView.setBackgroundColor(Color.BLUE);
-        return imageView;
+        this.mapView = new MapView(getActivity());
+        return mapView;
     }
 
     @Override
@@ -61,7 +59,7 @@ public class MapFragment extends Fragment {
 
                     @Override
                     public void onNext(Bitmap bitmap) {
-                        imageView.setImageBitmap(bitmap);
+                        mapView.setBitmap(bitmap);
                     }
                 });
     }
