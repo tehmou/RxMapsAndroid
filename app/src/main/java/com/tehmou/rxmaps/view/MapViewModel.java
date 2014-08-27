@@ -23,7 +23,6 @@ import rx.subjects.Subject;
 public class MapViewModel {
     private static final String TAG = MapViewModel.class.getCanonicalName();
     final private MapNetworkAdapter mapNetworkAdapter;
-    final private Observable<Collection<MapTile>> mapTiles;
     final private Observable<MapTileLoaded> loadedMapTiles;
     final private ZoomLevel zoomLevel;
 
@@ -34,7 +33,7 @@ public class MapViewModel {
                 PublishSubject.create();
 
         zoomLevel = new ZoomLevel(0);
-        mapTiles = zoomLevel
+        final Observable<Collection<MapTile>> mapTiles = zoomLevel
                 .getObservable()
                 .doOnNext(new Action1<Integer>() {
                     @Override
@@ -104,28 +103,5 @@ public class MapViewModel {
     public void zoomOut() {
         zoomLevel.setZoomLevel(
                 Math.max(0, zoomLevel.getZoomLevel() - 1));
-    }
-
-    static private class ZoomLevel {
-        final private Subject<Integer, Integer> subject;
-        private int zoomLevel;
-
-        public ZoomLevel(int zoomLevel) {
-            this.zoomLevel = zoomLevel;
-            subject = BehaviorSubject.create(this.zoomLevel);
-        }
-
-        public Observable<Integer> getObservable() {
-            return subject;
-        }
-
-        public void setZoomLevel(int zoomLevel) {
-            this.zoomLevel = zoomLevel;
-            subject.onNext(zoomLevel);
-        }
-
-        public int getZoomLevel() {
-            return zoomLevel;
-        }
     }
 }
