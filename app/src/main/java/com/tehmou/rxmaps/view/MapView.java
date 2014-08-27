@@ -1,60 +1,53 @@
 package com.tehmou.rxmaps.view;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
+import android.widget.FrameLayout;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
-import rx.functions.Action1;
+import com.tehmou.rxmaps.R;
 
 /**
- * Created by ttuo on 26/08/14.
+ * Created by ttuo on 27/08/14.
  */
-public class MapView extends View {
-    private Paint paint;
-    final private Collection<MapTileLoaded> mapTiles = new ArrayList<MapTileLoaded>();
+public class MapView extends FrameLayout {
+    private MapCanvasView mapCanvasView;
+    private MapViewModel viewModel;
 
     public MapView(Context context) {
-        this(context, null);
+        super(context);
     }
 
     public MapView(Context context, AttributeSet attrs) {
-        this(context, attrs, 0);
+        super(context, attrs);
     }
 
-    public MapView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init();
-    }
-
-    private void init() {
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        this.setBackgroundColor(Color.BLUE);
+    public MapView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
     }
 
     public void setViewModel(final MapViewModel mapViewModel) {
-        mapViewModel.getMapTiles().subscribe(setLoadedMapTile);
+        this.viewModel = mapViewModel;
+        mapCanvasView.setViewModel(mapViewModel);
     }
 
-    final private Action1<MapTileLoaded> setLoadedMapTile =
-            new Action1<MapTileLoaded>() {
-                @Override
-                public void call(MapTileLoaded mapTile) {
-                    mapTiles.add(mapTile);
-                }
-            };
-
     @Override
-    protected void onDraw(Canvas canvas) {
-        for (MapTileLoaded mapTile : mapTiles) {
-            canvas.drawBitmap(mapTile.getBitmap(),
-                    mapTile.getScreenX(), mapTile.getScreenY(), paint);
-        }
+    protected void onFinishInflate() {
+        super.onFinishInflate();
+        mapCanvasView = (MapCanvasView) findViewById(R.id.rx_map_view_canvas);
+        findViewById(R.id.rx_map_view_zoom_in)
+                .setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        viewModel.zoomIn();
+                    }
+                });
+        findViewById(R.id.rx_map_view_zoom_out)
+                .setOnClickListener(new OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        viewModel.zoomOut();
+                    }
+                });
     }
 }

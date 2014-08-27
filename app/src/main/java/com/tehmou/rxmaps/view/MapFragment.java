@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.tehmou.rxmaps.R;
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.network.MapNetworkAdapterSimple;
 import com.tehmou.rxmaps.network.NetworkClientOkHttp;
@@ -31,7 +32,7 @@ public class MapFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        this.mapView = new MapView(getActivity());
+        this.mapView = (MapView) inflater.inflate(R.layout.rx_map_view, container, false);
         return mapView;
     }
 
