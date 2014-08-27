@@ -9,6 +9,7 @@ import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
@@ -51,7 +52,17 @@ public class MapViewModel {
                             public Collection<MapTile> call(Integer zoomLevel,
                                                             Pair<Integer, Integer> viewSize,
                                                             Integer tileSizePx) {
-                                return Arrays.asList(new MapTile(zoomLevel, 0, 0, 0, 0));
+                                final int numX = (int) Math.floor(viewSize.first / tileSizePx);
+                                final int numY = (int) Math.floor(viewSize.second / tileSizePx);
+                                final List<MapTile> mapTileList = new ArrayList<MapTile>();
+                                for (int i = 0; i < numX; i++) {
+                                    for (int n = 0; n < numY; n++) {
+                                        final MapTile mapTile = new MapTile(
+                                                zoomLevel, i, n, i*tileSizePx, n*tileSizePx);
+                                        mapTileList.add(mapTile);
+                                    }
+                                }
+                                return mapTileList;
                             }
                         }
                 );

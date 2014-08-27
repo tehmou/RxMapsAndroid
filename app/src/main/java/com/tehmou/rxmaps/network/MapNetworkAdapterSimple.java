@@ -30,6 +30,6 @@ public class MapNetworkAdapterSimple implements MapNetworkAdapter {
 
     @Override
     public int getTileSizePx() {
-        return 128;
+        return 256;
     }
 }
