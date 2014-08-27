@@ -44,10 +44,13 @@ public class MapViewModel {
                                 .doOnNext(logOnNext("zoomLevel")),
                         viewSize
                                 .doOnNext(logPairOnNext("viewSize")),
-                        new Func2<Integer, Pair<Integer, Integer>, Collection<MapTile>>() {
+                        Observable.from(mapNetworkAdapter.getTileSizePx())
+                                .doOnNext(logOnNext("tileSizePx")),
+                        new Func3<Integer, Pair<Integer, Integer>, Integer, Collection<MapTile>>() {
                             @Override
                             public Collection<MapTile> call(Integer zoomLevel,
-                                                            Pair<Integer, Integer> viewSize) {
+                                                            Pair<Integer, Integer> viewSize,
+                                                            Integer tileSizePx) {
                                 return Arrays.asList(new MapTile(zoomLevel, 0, 0, 0, 0));
                             }
                         }
