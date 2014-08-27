@@ -19,7 +19,8 @@ import rx.functions.Action1;
 public class MapCanvasView extends View {
     private static final String TAG = MapCanvasView.class.getCanonicalName();
     private Paint paint;
-    final private Collection<MapTileLoaded> mapTiles = new ArrayList<MapTileLoaded>();
+    private Collection<MapTile> mapTiles;
+    final private Collection<MapTileLoaded> loadedMapTiles = new ArrayList<MapTileLoaded>();
     private MapViewModel viewModel;
 
     public MapCanvasView(Context context) {
@@ -42,24 +43,47 @@ public class MapCanvasView extends View {
 
     public void setViewModel(final MapViewModel mapViewModel) {
         this.viewModel = mapViewModel;
-        mapViewModel.getMapTiles().subscribe(setLoadedMapTile);
+        mapViewModel.getMapTiles().subscribe(setMapTiles);
+        mapViewModel.getLoadedMapTiles().subscribe(setLoadedMapTile);
     }
+
+    final private Action1<Collection<MapTile>> setMapTiles =
+            new Action1<Collection<MapTile>>() {
+                @Override
+                public void call(Collection<MapTile> mapTiles) {
+                    Log.d(TAG, "setMapTiles(" + mapTiles + ")");
+                    MapCanvasView.this.mapTiles = mapTiles;
+                    invalidate();
+                }
+            };
 
     final private Action1<MapTileLoaded> setLoadedMapTile =
             new Action1<MapTileLoaded>() {
                 @Override
                 public void call(MapTileLoaded mapTile) {
-                    mapTiles.add(mapTile);
+                    Log.d(TAG, "setLoadedMapTile(" + mapTile + ")");
+                    loadedMapTiles.add(mapTile);
                     invalidate();
                 }
             };
 
     @Override
     protected void onDraw(Canvas canvas) {
-        for (MapTileLoaded mapTile : mapTiles) {
-            if (mapTile.getBitmap() != null) {
-                canvas.drawBitmap(mapTile.getBitmap(),
-                        mapTile.getScreenX(), mapTile.getScreenY(), paint);
+        if (mapTiles == null) {
+            return;
+        }
+        for (MapTile mapTile : mapTiles) {
+            MapTileLoaded mapTileLoaded = null;
+            for (MapTileLoaded t : loadedMapTiles) {
+                if (mapTile.getX() == t.getX() &&
+                        mapTile.getY() == t.getY() &&
+                        mapTile.getZoom() == t.getZoom()) {
+                    mapTileLoaded = t;
+                }
+            }
+            if (mapTileLoaded != null && mapTileLoaded.getBitmap() != null) {
+                canvas.drawBitmap(mapTileLoaded.getBitmap(),
+                        mapTileLoaded.getScreenX(), mapTileLoaded.getScreenY(), paint);
             } else {
                 Log.d(TAG, "Error loading tile: " + mapTile);
             }

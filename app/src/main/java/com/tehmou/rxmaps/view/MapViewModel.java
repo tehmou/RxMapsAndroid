@@ -27,6 +27,7 @@ import rx.subjects.Subject;
 public class MapViewModel {
     private static final String TAG = MapViewModel.class.getCanonicalName();
     final private MapNetworkAdapter mapNetworkAdapter;
+    final private Observable<Collection<MapTile>> mapTiles;
     final private Observable<MapTileLoaded> loadedMapTiles;
     final private ZoomLevel zoomLevel;
     final private Subject<Pair<Integer, Integer>, Pair<Integer, Integer>> viewSize;
@@ -36,6 +37,8 @@ public class MapViewModel {
         zoomLevel = new ZoomLevel(0);
         viewSize = PublishSubject.create();
 
+        final Subject<Collection<MapTile>, Collection<MapTile>> mapTilesSubject =
+                BehaviorSubject.create();
         final Subject<MapTileLoaded, MapTileLoaded> loadedMapTilesSubject =
                 PublishSubject.create();
 
@@ -64,8 +67,12 @@ public class MapViewModel {
                                 }
                                 return mapTileList;
                             }
-                        }
-                );
+                        })
+                        .cache();
+
+        mapTiles
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(mapTilesSubject);
 
         mapTiles
                 .flatMap(new Func1<Collection<MapTile>, Observable<MapTile>>() {
@@ -79,6 +86,7 @@ public class MapViewModel {
                 .subscribe(loadedMapTilesSubject);
 
         loadedMapTiles = loadedMapTilesSubject;
+        this.mapTiles = mapTilesSubject;
     }
 
     public void subscribe() {
@@ -89,7 +97,11 @@ public class MapViewModel {
 
     }
 
-    public Observable<MapTileLoaded> getMapTiles() {
+    public Observable<Collection<MapTile>> getMapTiles() {
+        return mapTiles;
+    }
+
+    public Observable<MapTileLoaded> getLoadedMapTiles() {
         return loadedMapTiles;
     }
 
