@@ -1,4 +1,4 @@
-package com.tehmou.rxmaps.view;
+package com.tehmou.rxmaps.pojo;
 
 import rx.Observable;
 import rx.subjects.BehaviorSubject;

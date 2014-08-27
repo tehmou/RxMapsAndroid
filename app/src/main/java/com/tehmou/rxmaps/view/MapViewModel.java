@@ -5,9 +5,12 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
+import com.tehmou.rxmaps.pojo.LatLng;
+import com.tehmou.rxmaps.pojo.MapTile;
+import com.tehmou.rxmaps.pojo.MapTileLoaded;
+import com.tehmou.rxmaps.pojo.ZoomLevel;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -15,7 +18,6 @@ import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
-import rx.functions.Func2;
 import rx.functions.Func3;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
@@ -31,11 +33,13 @@ public class MapViewModel {
     final private Observable<MapTileLoaded> loadedMapTiles;
     final private ZoomLevel zoomLevel;
     final private Subject<Pair<Integer, Integer>, Pair<Integer, Integer>> viewSize;
+    final private Subject<LatLng, LatLng> centerCoord;
 
     public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
         this.mapNetworkAdapter = mapNetworkAdapter;
         zoomLevel = new ZoomLevel(0);
         viewSize = PublishSubject.create();
+        centerCoord = PublishSubject.create();
 
         final Subject<Collection<MapTile>, Collection<MapTile>> mapTilesSubject =
                 BehaviorSubject.create();

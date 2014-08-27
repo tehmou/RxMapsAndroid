@@ -1,4 +1,4 @@
-package com.tehmou.rxmaps.view;
+package com.tehmou.rxmaps.pojo;
 
 /**
  * Created by ttuo on 27/08/14.

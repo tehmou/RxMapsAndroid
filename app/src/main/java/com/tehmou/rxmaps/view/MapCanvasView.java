@@ -8,6 +8,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
+import com.tehmou.rxmaps.pojo.MapTile;
+import com.tehmou.rxmaps.pojo.MapTileLoaded;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
