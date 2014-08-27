@@ -20,6 +20,7 @@ public class MapCanvasView extends View {
     private static final String TAG = MapCanvasView.class.getCanonicalName();
     private Paint paint;
     final private Collection<MapTileLoaded> mapTiles = new ArrayList<MapTileLoaded>();
+    private MapViewModel viewModel;
 
     public MapCanvasView(Context context) {
         this(context, null);
@@ -40,6 +41,7 @@ public class MapCanvasView extends View {
     }
 
     public void setViewModel(final MapViewModel mapViewModel) {
+        this.viewModel = mapViewModel;
         mapViewModel.getMapTiles().subscribe(setLoadedMapTile);
     }
 
@@ -61,6 +63,14 @@ public class MapCanvasView extends View {
             } else {
                 Log.d(TAG, "Error loading tile: " + mapTile);
             }
+        }
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+        if (viewModel != null) {
+            viewModel.setViewSize(right - left, bottom - top);
         }
     }
 }

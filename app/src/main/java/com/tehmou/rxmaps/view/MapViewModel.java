@@ -2,6 +2,7 @@ package com.tehmou.rxmaps.view;
 
 import android.graphics.Bitmap;
 import android.util.Log;
+import android.util.Pair;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 
@@ -13,6 +14,8 @@ import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.functions.Func2;
+import rx.functions.Func3;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -25,28 +28,30 @@ public class MapViewModel {
     final private MapNetworkAdapter mapNetworkAdapter;
     final private Observable<MapTileLoaded> loadedMapTiles;
     final private ZoomLevel zoomLevel;
+    final private Subject<Pair<Integer, Integer>, Pair<Integer, Integer>> viewSize;
 
     public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
         this.mapNetworkAdapter = mapNetworkAdapter;
+        zoomLevel = new ZoomLevel(0);
+        viewSize = PublishSubject.create();
 
         final Subject<MapTileLoaded, MapTileLoaded> loadedMapTilesSubject =
                 PublishSubject.create();
 
-        zoomLevel = new ZoomLevel(0);
-        final Observable<Collection<MapTile>> mapTiles = zoomLevel
-                .getObservable()
-                .doOnNext(new Action1<Integer>() {
-                    @Override
-                    public void call(Integer zoomLevel) {
-                        Log.d(TAG, "zoomLevel: " + zoomLevel);
-                    }
-                })
-                .map(new Func1<Integer, Collection<MapTile>>() {
-                    @Override
-                    public Collection<MapTile> call(Integer zoomLevel) {
-                        return Arrays.asList(new MapTile(zoomLevel, 0, 0, 0, 0));
-                    }
-                });
+        final Observable<Collection<MapTile>> mapTiles =
+                Observable.combineLatest(
+                        zoomLevel.getObservable()
+                                .doOnNext(logOnNext("zoomLevel")),
+                        viewSize
+                                .doOnNext(logPairOnNext("viewSize")),
+                        new Func2<Integer, Pair<Integer, Integer>, Collection<MapTile>>() {
+                            @Override
+                            public Collection<MapTile> call(Integer zoomLevel,
+                                                            Pair<Integer, Integer> viewSize) {
+                                return Arrays.asList(new MapTile(zoomLevel, 0, 0, 0, 0));
+                            }
+                        }
+                );
 
         mapTiles
                 .flatMap(new Func1<Collection<MapTile>, Observable<MapTile>>() {
@@ -103,5 +108,27 @@ public class MapViewModel {
     public void zoomOut() {
         zoomLevel.setZoomLevel(
                 Math.max(0, zoomLevel.getZoomLevel() - 1));
+    }
+
+    static private <T> Action1<T> logOnNext(final String tag) {
+        return new Action1<T>() {
+            @Override
+            public void call(T value) {
+                Log.d(TAG, tag + ": " + value);
+            }
+        };
+    }
+
+    static private Action1<Pair<Integer, Integer>> logPairOnNext(final String tag) {
+        return new Action1<Pair<Integer, Integer>>() {
+            @Override
+            public void call(Pair<Integer, Integer> value) {
+                Log.d(TAG, tag + ": " + value.first + ", " + value.second);
+            }
+        };
+    }
+
+    public void setViewSize(int width, int height) {
+        viewSize.onNext(new Pair<Integer, Integer>(width, height));
     }
 }
