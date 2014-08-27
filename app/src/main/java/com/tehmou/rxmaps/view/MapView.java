@@ -8,14 +8,17 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import rx.functions.Action1;
 
 /**
  * Created by ttuo on 26/08/14.
  */
 public class MapView extends View {
-    private Bitmap bitmap;
     private Paint paint;
+    final private Collection<MapTileLoaded> mapTiles = new ArrayList<MapTileLoaded>();
 
     public MapView(Context context) {
         this(context, null);
@@ -36,21 +39,22 @@ public class MapView extends View {
     }
 
     public void setViewModel(final MapViewModel mapViewModel) {
-        mapViewModel.getBitmap().subscribe(setBitmap);
+        mapViewModel.getMapTiles().subscribe(setLoadedMapTile);
     }
 
-    final private Action1<Bitmap> setBitmap = new Action1<Bitmap>() {
-        @Override
-        public void call(Bitmap bitmap) {
-            MapView.this.bitmap = bitmap;
-            invalidate();
-        }
-    };
+    final private Action1<MapTileLoaded> setLoadedMapTile =
+            new Action1<MapTileLoaded>() {
+                @Override
+                public void call(MapTileLoaded mapTile) {
+                    mapTiles.add(mapTile);
+                }
+            };
 
     @Override
     protected void onDraw(Canvas canvas) {
-        if (bitmap != null) {
-            canvas.drawBitmap(bitmap, 0, 0, paint);
+        for (MapTileLoaded mapTile : mapTiles) {
+            canvas.drawBitmap(mapTile.getBitmap(),
+                    mapTile.getScreenX(), mapTile.getScreenY(), paint);
         }
     }
 }

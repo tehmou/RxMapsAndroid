@@ -27,4 +27,9 @@ public class MapNetworkAdapterSimple implements MapNetworkAdapter {
         final String url = String.format(urlFormat, zoom, x, y);
         return networkClient.loadBitmap(url);
     }
+
+    @Override
+    public int getTileSizePx() {
+        return 128;
+    }
 }
