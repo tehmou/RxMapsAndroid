@@ -9,20 +9,11 @@ public class MapTile {
     final private int zoom;
     final private int x;
     final private int y;
-    private Bitmap bitmap;
 
-    public MapTile(int zoom, int x, int y, Bitmap bitmap) {
+    public MapTile(int zoom, int x, int y) {
         this.zoom = zoom;
         this.x = x;
         this.y = y;
-        this.bitmap = bitmap;
-    }
-
-    public MapTile(MapTile mapTile, Bitmap bitmap) {
-        this.zoom = mapTile.zoom;
-        this.x = mapTile.x;
-        this.y = mapTile.y;
-        this.bitmap = bitmap;
     }
 
     public int getZoom() {
@@ -37,7 +28,10 @@ public class MapTile {
         return y;
     }
 
-    public Bitmap getBitmap() {
-        return bitmap;
+    public int tileHashCode() {
+        int hash = zoom;
+        hash = 31 * hash + x;
+        hash = 31 * hash + y;
+        return hash;
     }
 }

@@ -1,6 +1,7 @@
 package com.tehmou.rxmaps.view;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -9,10 +10,13 @@ import android.util.Log;
 import android.view.View;
 
 import com.tehmou.rxmaps.pojo.MapTile;
+import com.tehmou.rxmaps.pojo.MapTileBitmap;
 import com.tehmou.rxmaps.utils.PointD;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import rx.functions.Action1;
 
@@ -26,7 +30,7 @@ public class MapCanvasView extends View {
     private MapViewModel viewModel;
 
     private Collection<MapTile> mapTiles;
-    final private Collection<MapTile> loadedMapTiles = new ArrayList<MapTile>();
+    final private Map<Integer, Bitmap> mapTileBitmaps = new HashMap<Integer, Bitmap>();
     private PointD offset;
     private int tileSize;
 
@@ -55,7 +59,7 @@ public class MapCanvasView extends View {
         this.viewModel = mapViewModel;
         this.tileSize = mapViewModel.getTileSizePx();
         mapViewModel.getMapTiles().subscribe(setMapTiles);
-        mapViewModel.getLoadedMapTiles().subscribe(setLoadedMapTile);
+        mapViewModel.getLoadedMapTiles().subscribe(addLoadedMapTile);
         mapViewModel.getOffset().subscribe(setOffset);
     }
 
@@ -69,12 +73,12 @@ public class MapCanvasView extends View {
                 }
             };
 
-    final private Action1<MapTile> setLoadedMapTile =
-            new Action1<MapTile>() {
+    final private Action1<MapTileBitmap> addLoadedMapTile =
+            new Action1<MapTileBitmap>() {
                 @Override
-                public void call(final MapTile mapTile) {
+                public void call(final MapTileBitmap mapTile) {
                     Log.d(TAG, "setLoadedMapTile(" + mapTile + ")");
-                    loadedMapTiles.add(mapTile);
+                    mapTileBitmaps.put(mapTile.getTileHashCode(), mapTile.getBitmap());
                     invalidate();
                 }
             };
@@ -94,23 +98,21 @@ public class MapCanvasView extends View {
             return;
         }
         for (MapTile mapTile : mapTiles) {
-            MapTile mapTileLoaded = null;
-            for (MapTile t : loadedMapTiles) {
-                if (mapTile.getX() == t.getX() &&
-                        mapTile.getY() == t.getY() &&
-                        mapTile.getZoom() == t.getZoom()) {
-                    mapTileLoaded = t;
+            final int hash = mapTile.tileHashCode();
+            if (mapTileBitmaps.containsKey(hash)) {
+                final Bitmap bitmap = mapTileBitmaps.get(hash);
+                if (bitmap != null) {
+                    final float x = (float) (mapTile.getX() * tileSize + offset.x);
+                    final float y = (float) (mapTile.getY() * tileSize + offset.y);
+                    canvas.drawBitmap(bitmap, x, y, paint);
+                    canvas.drawRect(
+                            x, y,
+                            x + bitmap.getWidth() - 1,
+                            y + bitmap.getHeight() - 1,
+                            rectPaint);
+                } else {
+                    Log.d(TAG, "Loaded bitmap was null: " + mapTile);
                 }
-            }
-            if (mapTileLoaded != null && mapTileLoaded.getBitmap() != null) {
-                final float x = (float) (mapTile.getX() * tileSize + offset.x);
-                final float y = (float) (mapTile.getY() * tileSize + offset.y);
-                canvas.drawBitmap(mapTileLoaded.getBitmap(), x, y, paint);
-                canvas.drawRect(
-                        x, y,
-                        x + mapTileLoaded.getBitmap().getWidth() - 1,
-                        y + mapTileLoaded.getBitmap().getHeight() - 1,
-                        rectPaint);
             } else {
                 Log.d(TAG, "Error loading tile: " + mapTile);
             }

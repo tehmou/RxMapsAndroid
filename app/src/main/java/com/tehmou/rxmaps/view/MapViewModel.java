@@ -1,6 +1,7 @@
 package com.tehmou.rxmaps.view;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
+import com.tehmou.rxmaps.pojo.MapTileBitmap;
 import com.tehmou.rxmaps.utils.CoordinateProjection;
 import com.tehmou.rxmaps.utils.LatLng;
 import com.tehmou.rxmaps.pojo.MapTile;
@@ -25,7 +26,7 @@ public class MapViewModel {
     private static final String TAG = MapViewModel.class.getCanonicalName();
     final private MapNetworkAdapter mapNetworkAdapter;
     final private Observable<Collection<MapTile>> mapTiles;
-    final private Observable<MapTile> loadedMapTiles;
+    final private Observable<MapTileBitmap> loadedMapTiles;
     final private Observable<PointD> offset;
     final private ZoomLevel zoomLevel;
     final private Subject<PointD, PointD> viewSize;
@@ -41,7 +42,7 @@ public class MapViewModel {
 
         final Subject<Collection<MapTile>, Collection<MapTile>> mapTilesSubject =
                 BehaviorSubject.create();
-        final Subject<MapTile, MapTile> loadedMapTilesSubject =
+        final Subject<MapTileBitmap, MapTileBitmap> loadedMapTilesSubject =
                 PublishSubject.create();
 
         Observable<MapState> mapStateObservable =
@@ -83,7 +84,7 @@ public class MapViewModel {
         return mapTiles;
     }
 
-    public Observable<MapTile> getLoadedMapTiles() {
+    public Observable<MapTileBitmap> getLoadedMapTiles() {
         return loadedMapTiles;
     }
 

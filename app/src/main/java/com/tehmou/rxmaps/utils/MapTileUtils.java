@@ -5,6 +5,7 @@ import android.util.Log;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.pojo.MapTile;
+import com.tehmou.rxmaps.pojo.MapTileBitmap;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,7 +60,7 @@ public class MapTileUtils {
         final List<MapTile> mapTileList = new ArrayList<MapTile>();
         for (int i = firstTileX; i <= firstTileX + numX; i++) {
             for (int n = firstTileY; n <= firstTileY + numY; n++) {
-                final MapTile mapTile = new MapTile(zoomLevel, i, n, null);
+                final MapTile mapTile = new MapTile(zoomLevel, i, n);
                 mapTileList.add(mapTile);
             }
         }
@@ -80,22 +81,22 @@ public class MapTileUtils {
         };
     }
 
-    static public Func1<MapTile, Observable<MapTile>> loadMapTile(final MapNetworkAdapter mapNetworkAdapter) {
-        return new Func1<MapTile, Observable<MapTile>>() {
+    static public Func1<MapTile, Observable<MapTileBitmap>> loadMapTile(final MapNetworkAdapter mapNetworkAdapter) {
+        return new Func1<MapTile, Observable<MapTileBitmap>>() {
             @Override
-            public Observable<MapTile> call(final MapTile mapTile) {
+            public Observable<MapTileBitmap> call(final MapTile mapTile) {
                 return mapNetworkAdapter.getMapTile(
                         mapTile.getZoom(), mapTile.getX(), mapTile.getY())
-                        .map(new Func1<Bitmap, MapTile>() {
+                        .map(new Func1<Bitmap, MapTileBitmap>() {
                             @Override
-                            public MapTile call(Bitmap bitmap) {
-                                return new MapTile(mapTile, bitmap);
+                            public MapTileBitmap call(Bitmap bitmap) {
+                                return new MapTileBitmap(mapTile.tileHashCode(), bitmap);
                             }
                         })
-                        .onErrorResumeNext(new Func1<Throwable, Observable<? extends MapTile>>() {
+                        .onErrorResumeNext(new Func1<Throwable, Observable<? extends MapTileBitmap>>() {
                             @Override
-                            public Observable<? extends MapTile> call(Throwable throwable) {
-                                return Observable.from(new MapTile(mapTile, null));
+                            public Observable<? extends MapTileBitmap> call(Throwable throwable) {
+                                return Observable.from(new MapTileBitmap(mapTile.tileHashCode(), null));
                             }
                         });
             }
