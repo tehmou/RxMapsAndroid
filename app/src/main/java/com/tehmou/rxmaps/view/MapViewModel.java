@@ -1,5 +1,7 @@
 package com.tehmou.rxmaps.view;
 
+import android.util.Log;
+
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.pojo.MapTileBitmap;
 import com.tehmou.rxmaps.pojo.MapTileDrawable;
@@ -15,6 +17,7 @@ import java.util.Collection;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -31,9 +34,13 @@ public class MapViewModel {
     final private Subject<PointD, PointD> viewSize;
     final private Subject<LatLng, LatLng> centerCoord;
     final private CoordinateProjection coordinateProjection;
+    final private Subject<PointD, PointD> dragDelta;
+
+    private PointD lastViewSize = null;
 
     public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
         this.mapNetworkAdapter = mapNetworkAdapter;
+        dragDelta = PublishSubject.create();
         zoomLevel = new ZoomLevel(3);
         viewSize = PublishSubject.create();
         centerCoord = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
@@ -89,8 +96,22 @@ public class MapViewModel {
                 Math.max(0, zoomLevel.getZoomLevel() - 1));
     }
 
-
     public void setViewSize(int width, int height) {
         viewSize.onNext(new PointD(width, height));
+        lastViewSize = new PointD(width, height);
+    }
+
+    public void dragDelta(final double dx, final double dy) {
+        Log.d(TAG, "dragDelta(" + dx + ", " + dy + ")");
+        dragDelta.onNext(new PointD(dx, dy));
+    }
+
+    public void setTouchDelta(Observable<PointD> touchDelta) {
+        touchDelta.subscribe(new Action1<PointD>() {
+            @Override
+            public void call(PointD pointD) {
+                Log.d(TAG, "touchDelta(" + pointD + ")");
+            }
+        });
     }
 }

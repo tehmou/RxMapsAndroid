@@ -5,17 +5,23 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Point;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.DragEvent;
+import android.view.MotionEvent;
 import android.view.View;
 
 import com.tehmou.rxmaps.pojo.MapTileBitmap;
 import com.tehmou.rxmaps.pojo.MapTileDrawable;
+import com.tehmou.rxmaps.utils.PointD;
+import com.tehmou.rxmaps.utils.ViewUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import rx.Observable;
 import rx.functions.Action1;
 
 /**
@@ -29,6 +35,7 @@ public class MapCanvasView extends View {
 
     private Collection<MapTileDrawable> mapTiles;
     final private Map<Integer, Bitmap> mapTileBitmaps = new HashMap<Integer, Bitmap>();
+    final private Observable<PointD> touchDelta;
 
     public MapCanvasView(Context context) {
         this(context, null);
@@ -41,6 +48,9 @@ public class MapCanvasView extends View {
     public MapCanvasView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
+        ViewUtils.TouchDelta touchDelta = new ViewUtils.TouchDelta();
+        setOnTouchListener(touchDelta);
+        this.touchDelta = touchDelta.getObservable();
     }
 
     private void init() {
@@ -53,6 +63,7 @@ public class MapCanvasView extends View {
 
     public void setViewModel(final MapViewModel mapViewModel) {
         this.viewModel = mapViewModel;
+        mapViewModel.setTouchDelta(touchDelta);
         mapViewModel.getMapTiles().subscribe(setMapTiles);
         mapViewModel.getLoadedMapTiles().subscribe(addLoadedMapTile);
     }
