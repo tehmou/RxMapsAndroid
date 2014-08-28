@@ -65,17 +65,18 @@ public class MapViewModel {
                             @Override
                             public Collection<MapTile> call(final Integer zoomLevel,
                                                             final Pair<Integer, Integer> viewSize,
-                                                            final Integer tileSizePx,
+                                                            final Integer intTileSizePx,
                                                             final LatLng center) {
-                                final int mapPxSize = coordinateProjection.pxSize(zoomLevel);
+                                final double mapPxSize = coordinateProjection.pxSize(zoomLevel);
+                                final double tileSizePx = intTileSizePx;
                                 final PointD centerPx = getPointCoord(center);
 
-                                //final double offsetX = (viewSize.first / 2.0) - centerPx.x;
-                                //final double offsetY = (viewSize.second / 2.0) - centerPx.y;
+                                final double offsetX2 = centerPx.x - (mapPxSize / 2.0);
+                                final double offsetY2 = centerPx.y - (mapPxSize / 2.0);
                                 final double centerOffsetX = (viewSize.first - mapPxSize) / 2.0;
                                 final double centerOffsetY = (viewSize.second - mapPxSize) / 2.0;
-                                final double offsetX = centerOffsetX;
-                                final double offsetY = centerOffsetY;
+                                final double offsetX = centerOffsetX - offsetX2;
+                                final double offsetY = centerOffsetY - offsetY2;
                                 Log.d(TAG, "offsetPx(" + offsetX + ", " + offsetY + ")");
 
                                 final int firstTileX = (int) Math.floor(-offsetX / tileSizePx);

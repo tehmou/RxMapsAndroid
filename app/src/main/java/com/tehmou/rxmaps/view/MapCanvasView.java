@@ -24,6 +24,7 @@ import rx.functions.Action1;
 public class MapCanvasView extends View {
     private static final String TAG = MapCanvasView.class.getCanonicalName();
     private Paint paint;
+    private Paint rectPaint;
     private Collection<MapTile> mapTiles;
     final private Collection<MapTileLoaded> loadedMapTiles = new ArrayList<MapTileLoaded>();
     private MapViewModel viewModel;
@@ -44,6 +45,9 @@ public class MapCanvasView extends View {
     private void init() {
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         this.setBackgroundColor(Color.BLUE);
+        rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        rectPaint.setColor(Color.RED);
+        rectPaint.setStyle(Paint.Style.STROKE);
     }
 
     public void setViewModel(final MapViewModel mapViewModel) {
@@ -90,18 +94,15 @@ public class MapCanvasView extends View {
                 canvas.drawBitmap(mapTileLoaded.getBitmap(),
                         (float) mapTileLoaded.getScreenX(), (float) mapTileLoaded.getScreenY(),
                         paint);
+                canvas.drawRect(
+                        (float) mapTileLoaded.getScreenX(), (float) mapTileLoaded.getScreenY(),
+                        (float) mapTileLoaded.getScreenX() + mapTileLoaded.getBitmap().getWidth() - 1,
+                        (float) mapTileLoaded.getScreenY() + mapTileLoaded.getBitmap().getHeight() - 1,
+                        rectPaint);
             } else {
                 Log.d(TAG, "Error loading tile: " + mapTile);
             }
         }
-        /*if (viewModel != null) {
-            LatLng latLng = new LatLng(51.507351, -0.127758);
-            PointD point = viewModel.getPointCoord(latLng);
-            Paint circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            circlePaint.setColor(Color.RED);
-            circlePaint.setStyle(Paint.Style.FILL);
-            canvas.drawCircle((float) point.x, (float) point.y, 5f, circlePaint);
-        }*/
     }
 
     @Override
