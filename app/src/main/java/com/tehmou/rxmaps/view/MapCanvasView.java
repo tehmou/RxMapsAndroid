@@ -9,11 +9,9 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
-import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.MapTileBitmap;
-import com.tehmou.rxmaps.utils.PointD;
+import com.tehmou.rxmaps.pojo.MapTileDrawable;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,10 +27,8 @@ public class MapCanvasView extends View {
     private Paint rectPaint;
     private MapViewModel viewModel;
 
-    private Collection<MapTile> mapTiles;
+    private Collection<MapTileDrawable> mapTiles;
     final private Map<Integer, Bitmap> mapTileBitmaps = new HashMap<Integer, Bitmap>();
-    private PointD offset;
-    private int tileSize;
 
     public MapCanvasView(Context context) {
         this(context, null);
@@ -57,16 +53,14 @@ public class MapCanvasView extends View {
 
     public void setViewModel(final MapViewModel mapViewModel) {
         this.viewModel = mapViewModel;
-        this.tileSize = mapViewModel.getTileSizePx();
         mapViewModel.getMapTiles().subscribe(setMapTiles);
         mapViewModel.getLoadedMapTiles().subscribe(addLoadedMapTile);
-        mapViewModel.getOffset().subscribe(setOffset);
     }
 
-    final private Action1<Collection<MapTile>> setMapTiles =
-            new Action1<Collection<MapTile>>() {
+    final private Action1<Collection<MapTileDrawable>> setMapTiles =
+            new Action1<Collection<MapTileDrawable>>() {
                 @Override
-                public void call(Collection<MapTile> mapTiles) {
+                public void call(Collection<MapTileDrawable> mapTiles) {
                     Log.d(TAG, "setMapTiles(" + mapTiles + ")");
                     MapCanvasView.this.mapTiles = mapTiles;
                     invalidate();
@@ -83,27 +77,18 @@ public class MapCanvasView extends View {
                 }
             };
 
-    final private Action1<PointD> setOffset =
-            new Action1<PointD>() {
-                @Override
-                public void call(PointD offset) {
-                    MapCanvasView.this.offset = offset;
-                    invalidate();
-                }
-            };
-
     @Override
     protected void onDraw(Canvas canvas) {
         if (mapTiles == null) {
             return;
         }
-        for (MapTile mapTile : mapTiles) {
+        for (MapTileDrawable mapTile : mapTiles) {
             final int hash = mapTile.tileHashCode();
             if (mapTileBitmaps.containsKey(hash)) {
                 final Bitmap bitmap = mapTileBitmaps.get(hash);
                 if (bitmap != null) {
-                    final float x = (float) (mapTile.getX() * tileSize + offset.x);
-                    final float y = (float) (mapTile.getY() * tileSize + offset.y);
+                    final float x = (float) mapTile.getScreenX();
+                    final float y = (float) mapTile.getScreenY();
                     canvas.drawBitmap(bitmap, x, y, paint);
                     canvas.drawRect(
                             x, y,

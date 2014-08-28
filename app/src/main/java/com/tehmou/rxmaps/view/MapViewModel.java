@@ -2,6 +2,7 @@ package com.tehmou.rxmaps.view;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.pojo.MapTileBitmap;
+import com.tehmou.rxmaps.pojo.MapTileDrawable;
 import com.tehmou.rxmaps.utils.CoordinateProjection;
 import com.tehmou.rxmaps.utils.LatLng;
 import com.tehmou.rxmaps.pojo.MapTile;
@@ -14,7 +15,6 @@ import java.util.Collection;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Func1;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -25,9 +25,8 @@ import rx.subjects.Subject;
 public class MapViewModel {
     private static final String TAG = MapViewModel.class.getCanonicalName();
     final private MapNetworkAdapter mapNetworkAdapter;
-    final private Observable<Collection<MapTile>> mapTiles;
+    final private Observable<Collection<MapTileDrawable>> mapTiles;
     final private Observable<MapTileBitmap> loadedMapTiles;
-    final private Observable<PointD> offset;
     final private ZoomLevel zoomLevel;
     final private Subject<PointD, PointD> viewSize;
     final private Subject<LatLng, LatLng> centerCoord;
@@ -40,7 +39,7 @@ public class MapViewModel {
         centerCoord = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
         coordinateProjection = new CoordinateProjection(mapNetworkAdapter.getTileSizePx());
 
-        final Subject<Collection<MapTile>, Collection<MapTile>> mapTilesSubject =
+        final Subject<Collection<MapTileDrawable>, Collection<MapTileDrawable>> mapTilesSubject =
                 BehaviorSubject.create();
         final Subject<MapTileBitmap, MapTileBitmap> loadedMapTilesSubject =
                 PublishSubject.create();
@@ -54,7 +53,7 @@ public class MapViewModel {
                 )
                 .cache();
 
-        final Observable<Collection<MapTile>> mapTiles =
+        final Observable<Collection<MapTileDrawable>> mapTiles =
                 mapStateObservable
                         .map(MapTileUtils.calculateMapTiles(mapNetworkAdapter.getTileSizePx()));
 
@@ -70,17 +69,9 @@ public class MapViewModel {
 
         loadedMapTiles = loadedMapTilesSubject;
         this.mapTiles = mapTilesSubject;
-        offset = mapStateObservable
-                .map(new Func1<MapState, PointD>() {
-                    @Override
-                    public PointD call(MapState mapState) {
-                        return mapState.offset;
-                    }
-                })
-                .observeOn(AndroidSchedulers.mainThread());
     }
 
-    public Observable<Collection<MapTile>> getMapTiles() {
+    public Observable<Collection<MapTileDrawable>> getMapTiles() {
         return mapTiles;
     }
 
@@ -101,13 +92,5 @@ public class MapViewModel {
 
     public void setViewSize(int width, int height) {
         viewSize.onNext(new PointD(width, height));
-    }
-
-    public Observable<PointD> getOffset() {
-        return offset;
-    }
-
-    public int getTileSizePx() {
-        return mapNetworkAdapter.getTileSizePx();
     }
 }

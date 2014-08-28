@@ -6,6 +6,7 @@ import android.util.Log;
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.MapTileBitmap;
+import com.tehmou.rxmaps.pojo.MapTileDrawable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,28 +40,31 @@ public class MapTileUtils {
         return new PointD(offsetX, offsetY);
     }
 
-    static public Func1<MapState, Collection<MapTile>> calculateMapTiles(final double tileSizePx) {
-        return new Func1<MapState, Collection<MapTile>>() {
+    static public Func1<MapState, Collection<MapTileDrawable>> calculateMapTiles(final double tileSizePx) {
+        return new Func1<MapState, Collection<MapTileDrawable>>() {
             @Override
-            public Collection<MapTile> call(MapState mapState) {
+            public Collection<MapTileDrawable> call(MapState mapState) {
                 return calculateMapTiles(tileSizePx, mapState.zoomLevel, mapState.viewSize, mapState.offset);
             }
         };
     }
 
-    static private Collection<MapTile> calculateMapTiles(final double tileSizePx,
-                                                        final Integer zoomLevel,
-                                                        final PointD viewSize,
-                                                        final PointD offset) {
+    static private Collection<MapTileDrawable> calculateMapTiles(final double tileSizePx,
+                                                                 final Integer zoomLevel,
+                                                                 final PointD viewSize,
+                                                                 final PointD offset) {
         final int firstTileX = (int) Math.floor(-offset.x / tileSizePx);
         final int firstTileY = (int) Math.floor(-offset.y / tileSizePx);
         final int numX = (int) Math.ceil(viewSize.x / tileSizePx);
         final int numY = (int) Math.ceil(viewSize.y / tileSizePx);
 
-        final List<MapTile> mapTileList = new ArrayList<MapTile>();
+        final List<MapTileDrawable> mapTileList = new ArrayList<MapTileDrawable>();
         for (int i = firstTileX; i <= firstTileX + numX; i++) {
             for (int n = firstTileY; n <= firstTileY + numY; n++) {
-                final MapTile mapTile = new MapTile(zoomLevel, i, n);
+                final MapTileDrawable mapTile = new MapTileDrawable(
+                        zoomLevel, i, n,
+                        i*tileSizePx + offset.x,
+                        n*tileSizePx + offset.y);
                 mapTileList.add(mapTile);
             }
         }
@@ -112,10 +116,10 @@ public class MapTileUtils {
         };
     }
 
-    static final public Func1<Collection<MapTile>, Observable<MapTile>> expandCollection =
-            new Func1<Collection<MapTile>, Observable<MapTile>>() {
+    static final public Func1<Collection<MapTileDrawable>, Observable<MapTileDrawable>> expandCollection =
+            new Func1<Collection<MapTileDrawable>, Observable<MapTileDrawable>>() {
                 @Override
-                public Observable<MapTile> call(Collection<MapTile> mapTiles) {
+                public Observable<MapTileDrawable> call(Collection<MapTileDrawable> mapTiles) {
                     return Observable.from(mapTiles);
                 }
             };
