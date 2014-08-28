@@ -1,6 +1,7 @@
 package com.tehmou.rxmaps.view;
 
 import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.util.Log;
 import android.util.Pair;
 
@@ -21,6 +22,7 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func3;
+import rx.functions.Func4;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -40,9 +42,9 @@ public class MapViewModel {
 
     public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
         this.mapNetworkAdapter = mapNetworkAdapter;
-        zoomLevel = new ZoomLevel(0);
+        zoomLevel = new ZoomLevel(3);
         viewSize = PublishSubject.create();
-        centerCoord = PublishSubject.create();
+        centerCoord = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
         coordinateProjection = new CoordinateProjection(mapNetworkAdapter.getTileSizePx());
 
         final Subject<Collection<MapTile>, Collection<MapTile>> mapTilesSubject =
@@ -58,18 +60,36 @@ public class MapViewModel {
                                 .doOnNext(logPairOnNext("viewSize")),
                         Observable.from(mapNetworkAdapter.getTileSizePx())
                                 .doOnNext(logOnNext("tileSizePx")),
-                        new Func3<Integer, Pair<Integer, Integer>, Integer, Collection<MapTile>>() {
+                        centerCoord,
+                        new Func4<Integer, Pair<Integer, Integer>, Integer, LatLng, Collection<MapTile>>() {
                             @Override
-                            public Collection<MapTile> call(Integer zoomLevel,
-                                                            Pair<Integer, Integer> viewSize,
-                                                            Integer tileSizePx) {
-                                final int numX = (int) Math.floor(viewSize.first / tileSizePx);
-                                final int numY = (int) Math.floor(viewSize.second / tileSizePx);
+                            public Collection<MapTile> call(final Integer zoomLevel,
+                                                            final Pair<Integer, Integer> viewSize,
+                                                            final Integer tileSizePx,
+                                                            final LatLng center) {
+                                final int mapPxSize = coordinateProjection.pxSize(zoomLevel);
+                                final PointD centerPx = getPointCoord(center);
+
+                                //final double offsetX = (viewSize.first / 2.0) - centerPx.x;
+                                //final double offsetY = (viewSize.second / 2.0) - centerPx.y;
+                                final double centerOffsetX = (viewSize.first - mapPxSize) / 2.0;
+                                final double centerOffsetY = (viewSize.second - mapPxSize) / 2.0;
+                                final double offsetX = centerOffsetX;
+                                final double offsetY = centerOffsetY;
+                                Log.d(TAG, "offsetPx(" + offsetX + ", " + offsetY + ")");
+
+                                final int firstTileX = (int) Math.floor(-offsetX / tileSizePx);
+                                final int firstTileY = (int) Math.floor(-offsetY / tileSizePx);
+                                final int numX = (int) Math.ceil(viewSize.first / tileSizePx);
+                                final int numY = (int) Math.ceil(viewSize.second / tileSizePx);
+
                                 final List<MapTile> mapTileList = new ArrayList<MapTile>();
-                                for (int i = 0; i < numX; i++) {
-                                    for (int n = 0; n < numY; n++) {
+                                for (int i = firstTileX; i <= firstTileX + numX; i++) {
+                                    for (int n = firstTileY; n <= firstTileY + numY; n++) {
                                         final MapTile mapTile = new MapTile(
-                                                zoomLevel, i, n, i*tileSizePx, n*tileSizePx);
+                                                zoomLevel, i, n,
+                                                i*tileSizePx + offsetX,
+                                                n*tileSizePx + offsetY);
                                         mapTileList.add(mapTile);
                                     }
                                 }

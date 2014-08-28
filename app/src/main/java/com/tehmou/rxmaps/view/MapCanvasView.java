@@ -88,19 +88,20 @@ public class MapCanvasView extends View {
             }
             if (mapTileLoaded != null && mapTileLoaded.getBitmap() != null) {
                 canvas.drawBitmap(mapTileLoaded.getBitmap(),
-                        mapTileLoaded.getScreenX(), mapTileLoaded.getScreenY(), paint);
+                        (float) mapTileLoaded.getScreenX(), (float) mapTileLoaded.getScreenY(),
+                        paint);
             } else {
                 Log.d(TAG, "Error loading tile: " + mapTile);
             }
         }
-        if (viewModel != null) {
+        /*if (viewModel != null) {
             LatLng latLng = new LatLng(51.507351, -0.127758);
             PointD point = viewModel.getPointCoord(latLng);
             Paint circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             circlePaint.setColor(Color.RED);
             circlePaint.setStyle(Paint.Style.FILL);
             canvas.drawCircle((float) point.x, (float) point.y, 5f, circlePaint);
-        }
+        }*/
     }
 
     @Override

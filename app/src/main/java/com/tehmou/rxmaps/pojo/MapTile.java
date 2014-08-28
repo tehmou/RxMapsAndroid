@@ -7,10 +7,10 @@ public class MapTile {
     final private int zoom;
     final private int x;
     final private int y;
-    final private int screenX;
-    final private int screenY;
+    final private double screenX;
+    final private double screenY;
 
-    public MapTile(int zoom, int x, int y, int screenX, int screenY) {
+    public MapTile(int zoom, int x, int y, double screenX, double screenY) {
         this.zoom = zoom;
         this.x = x;
         this.y = y;
@@ -30,11 +30,11 @@ public class MapTile {
         return y;
     }
 
-    public int getScreenX() {
+    public double getScreenX() {
         return screenX;
     }
 
-    public int getScreenY() {
+    public double getScreenY() {
         return screenY;
     }
 }

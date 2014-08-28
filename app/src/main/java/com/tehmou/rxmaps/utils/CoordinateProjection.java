@@ -10,11 +10,13 @@ package com.tehmou.rxmaps.utils;
  * http://en.wikipedia.org/wiki/Mercator_projection
  */
 public class CoordinateProjection {
-    private PointD pxOrigin;
-    private double pxPerLonDegree;
-    private double pxPerLonRadian;
+    final private int tileSize;
+    final private PointD pxOrigin;
+    final private double pxPerLonDegree;
+    final private double pxPerLonRadian;
 
     public CoordinateProjection(final int tileSize) {
+        this.tileSize = tileSize;
         this.pxOrigin = new PointD(tileSize / 2.0, tileSize / 2.0);
         this.pxPerLonDegree = tileSize / 360.0;
         this.pxPerLonRadian = tileSize / (2 * Math.PI);
@@ -37,5 +39,9 @@ public class CoordinateProjection {
         final double latRadians = (y - pxOrigin.y) / -pxPerLonRadian;
         final double lat = Math.toDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI / 2);
         return new PointD(lat, lng);
+    }
+
+    public int pxSize(final int zoom) {
+        return tileSize * (1 << zoom);
     }
 }
