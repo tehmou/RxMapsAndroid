@@ -9,7 +9,6 @@ import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.utils.CoordinateProjection;
 import com.tehmou.rxmaps.utils.LatLng;
 import com.tehmou.rxmaps.pojo.MapTile;
-import com.tehmou.rxmaps.pojo.MapTileLoaded;
 import com.tehmou.rxmaps.pojo.ZoomLevel;
 import com.tehmou.rxmaps.utils.PointD;
 
@@ -34,9 +33,10 @@ public class MapViewModel {
     private static final String TAG = MapViewModel.class.getCanonicalName();
     final private MapNetworkAdapter mapNetworkAdapter;
     final private Observable<Collection<MapTile>> mapTiles;
-    final private Observable<MapTileLoaded> loadedMapTiles;
+    final private Observable<MapTile> loadedMapTiles;
+    final private Observable<PointD> offset;
     final private ZoomLevel zoomLevel;
-    final private Subject<Pair<Integer, Integer>, Pair<Integer, Integer>> viewSize;
+    final private Subject<PointD, PointD> viewSize;
     final private Subject<LatLng, LatLng> centerCoord;
     final private CoordinateProjection coordinateProjection;
 
@@ -49,48 +49,48 @@ public class MapViewModel {
 
         final Subject<Collection<MapTile>, Collection<MapTile>> mapTilesSubject =
                 BehaviorSubject.create();
-        final Subject<MapTileLoaded, MapTileLoaded> loadedMapTilesSubject =
+        final Subject<MapTile, MapTile> loadedMapTilesSubject =
                 PublishSubject.create();
+
+        Observable<PointD> tempOffset = Observable.combineLatest(
+                zoomLevel.getObservable()
+                        .doOnNext(logOnNext("zoomLevel")),
+                viewSize
+                        .doOnNext(logOnNext("viewSize")),
+                centerCoord,
+                new Func3<Integer, PointD, LatLng, PointD>() {
+                    @Override
+                    public PointD call(Integer zoomLevel,
+                                       PointD viewSize,
+                                       LatLng center) {
+                        return calculateOffset(zoomLevel, viewSize, center);
+                    }
+                })
+                .cache();
 
         final Observable<Collection<MapTile>> mapTiles =
                 Observable.combineLatest(
                         zoomLevel.getObservable()
                                 .doOnNext(logOnNext("zoomLevel")),
                         viewSize
-                                .doOnNext(logPairOnNext("viewSize")),
-                        Observable.from(mapNetworkAdapter.getTileSizePx())
-                                .doOnNext(logOnNext("tileSizePx")),
+                                .doOnNext(logOnNext("viewSize")),
                         centerCoord,
-                        new Func4<Integer, Pair<Integer, Integer>, Integer, LatLng, Collection<MapTile>>() {
+                        new Func3<Integer, PointD, LatLng, Collection<MapTile>>() {
                             @Override
                             public Collection<MapTile> call(final Integer zoomLevel,
-                                                            final Pair<Integer, Integer> viewSize,
-                                                            final Integer intTileSizePx,
+                                                            final PointD viewSize,
                                                             final LatLng center) {
-                                final double mapPxSize = coordinateProjection.pxSize(zoomLevel);
-                                final double tileSizePx = intTileSizePx;
-                                final PointD centerPx = getPointCoord(center);
-
-                                final double offsetX2 = centerPx.x - (mapPxSize / 2.0);
-                                final double offsetY2 = centerPx.y - (mapPxSize / 2.0);
-                                final double centerOffsetX = (viewSize.first - mapPxSize) / 2.0;
-                                final double centerOffsetY = (viewSize.second - mapPxSize) / 2.0;
-                                final double offsetX = centerOffsetX - offsetX2;
-                                final double offsetY = centerOffsetY - offsetY2;
-                                Log.d(TAG, "offsetPx(" + offsetX + ", " + offsetY + ")");
-
-                                final int firstTileX = (int) Math.floor(-offsetX / tileSizePx);
-                                final int firstTileY = (int) Math.floor(-offsetY / tileSizePx);
-                                final int numX = (int) Math.ceil(viewSize.first / tileSizePx);
-                                final int numY = (int) Math.ceil(viewSize.second / tileSizePx);
+                                final double tileSizePx = mapNetworkAdapter.getTileSizePx();
+                                final PointD offset = calculateOffset(zoomLevel, viewSize, center);
+                                final int firstTileX = (int) Math.floor(-offset.x / tileSizePx);
+                                final int firstTileY = (int) Math.floor(-offset.y / tileSizePx);
+                                final int numX = (int) Math.ceil(viewSize.x / tileSizePx);
+                                final int numY = (int) Math.ceil(viewSize.y / tileSizePx);
 
                                 final List<MapTile> mapTileList = new ArrayList<MapTile>();
                                 for (int i = firstTileX; i <= firstTileX + numX; i++) {
                                     for (int n = firstTileY; n <= firstTileY + numY; n++) {
-                                        final MapTile mapTile = new MapTile(
-                                                zoomLevel, i, n,
-                                                i*tileSizePx + offsetX,
-                                                n*tileSizePx + offsetY);
+                                        final MapTile mapTile = new MapTile(zoomLevel, i, n, null);
                                         mapTileList.add(mapTile);
                                     }
                                 }
@@ -116,40 +116,48 @@ public class MapViewModel {
 
         loadedMapTiles = loadedMapTilesSubject;
         this.mapTiles = mapTilesSubject;
+        offset = tempOffset.observeOn(AndroidSchedulers.mainThread());
     }
 
-    public void subscribe() {
-
-    }
-
-    public void unsubscribe() {
-
+    private PointD calculateOffset(final Integer zoomLevel,
+                                   final PointD viewSize,
+                                   final LatLng center) {
+        final double mapPxSize = coordinateProjection.pxSize(zoomLevel);
+        final PointD centerPx = getPointCoord(center);
+        final double offsetX2 = centerPx.x - (mapPxSize / 2.0);
+        final double offsetY2 = centerPx.y - (mapPxSize / 2.0);
+        final double centerOffsetX = (viewSize.x - mapPxSize) / 2.0;
+        final double centerOffsetY = (viewSize.y - mapPxSize) / 2.0;
+        final double offsetX = centerOffsetX - offsetX2;
+        final double offsetY = centerOffsetY - offsetY2;
+        Log.d(TAG, "offsetPx(" + offsetX + ", " + offsetY + ")");
+        return new PointD(offsetX, offsetY);
     }
 
     public Observable<Collection<MapTile>> getMapTiles() {
         return mapTiles;
     }
 
-    public Observable<MapTileLoaded> getLoadedMapTiles() {
+    public Observable<MapTile> getLoadedMapTiles() {
         return loadedMapTiles;
     }
 
-    final private Func1<MapTile, Observable<MapTileLoaded>> loadMapTile =
-            new Func1<MapTile, Observable<MapTileLoaded>>() {
+    final private Func1<MapTile, Observable<MapTile>> loadMapTile =
+            new Func1<MapTile, Observable<MapTile>>() {
                 @Override
-                public Observable<MapTileLoaded> call(final MapTile mapTile) {
+                public Observable<MapTile> call(final MapTile mapTile) {
                     return mapNetworkAdapter.getMapTile(
                             mapTile.getZoom(), mapTile.getX(), mapTile.getY())
-                            .map(new Func1<Bitmap, MapTileLoaded>() {
+                            .map(new Func1<Bitmap, MapTile>() {
                                 @Override
-                                public MapTileLoaded call(Bitmap bitmap) {
-                                    return new MapTileLoaded(mapTile, bitmap);
+                                public MapTile call(Bitmap bitmap) {
+                                    return new MapTile(mapTile, bitmap);
                                 }
                             })
-                            .onErrorResumeNext(new Func1<Throwable, Observable<? extends MapTileLoaded>>() {
+                            .onErrorResumeNext(new Func1<Throwable, Observable<? extends MapTile>>() {
                                 @Override
-                                public Observable<? extends MapTileLoaded> call(Throwable throwable) {
-                                    return Observable.from(new MapTileLoaded(mapTile, null));
+                                public Observable<? extends MapTile> call(Throwable throwable) {
+                                    return Observable.from(new MapTile(mapTile, null));
                                 }
                             });
                 }
@@ -174,21 +182,20 @@ public class MapViewModel {
         };
     }
 
-    static private Action1<Pair<Integer, Integer>> logPairOnNext(final String tag) {
-        return new Action1<Pair<Integer, Integer>>() {
-            @Override
-            public void call(Pair<Integer, Integer> value) {
-                Log.d(TAG, tag + ": " + value.first + ", " + value.second);
-            }
-        };
-    }
-
     public void setViewSize(int width, int height) {
-        viewSize.onNext(new Pair<Integer, Integer>(width, height));
+        viewSize.onNext(new PointD(width, height));
     }
 
     public PointD getPointCoord(final LatLng latLng) {
         return coordinateProjection.fromLatLngToPoint(
                 latLng.getLat(), latLng.getLng(), zoomLevel.getZoomLevel());
+    }
+
+    public Observable<PointD> getOffset() {
+        return offset;
+    }
+
+    public int getTileSizePx() {
+        return mapNetworkAdapter.getTileSizePx();
     }
 }

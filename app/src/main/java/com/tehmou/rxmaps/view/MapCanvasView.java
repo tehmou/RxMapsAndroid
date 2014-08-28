@@ -9,8 +9,6 @@ import android.util.Log;
 import android.view.View;
 
 import com.tehmou.rxmaps.pojo.MapTile;
-import com.tehmou.rxmaps.pojo.MapTileLoaded;
-import com.tehmou.rxmaps.utils.LatLng;
 import com.tehmou.rxmaps.utils.PointD;
 
 import java.util.ArrayList;
@@ -25,9 +23,12 @@ public class MapCanvasView extends View {
     private static final String TAG = MapCanvasView.class.getCanonicalName();
     private Paint paint;
     private Paint rectPaint;
-    private Collection<MapTile> mapTiles;
-    final private Collection<MapTileLoaded> loadedMapTiles = new ArrayList<MapTileLoaded>();
     private MapViewModel viewModel;
+
+    private Collection<MapTile> mapTiles;
+    final private Collection<MapTile> loadedMapTiles = new ArrayList<MapTile>();
+    private PointD offset;
+    private int tileSize;
 
     public MapCanvasView(Context context) {
         this(context, null);
@@ -52,8 +53,10 @@ public class MapCanvasView extends View {
 
     public void setViewModel(final MapViewModel mapViewModel) {
         this.viewModel = mapViewModel;
+        this.tileSize = mapViewModel.getTileSizePx();
         mapViewModel.getMapTiles().subscribe(setMapTiles);
         mapViewModel.getLoadedMapTiles().subscribe(setLoadedMapTile);
+        mapViewModel.getOffset().subscribe(setOffset);
     }
 
     final private Action1<Collection<MapTile>> setMapTiles =
@@ -66,12 +69,21 @@ public class MapCanvasView extends View {
                 }
             };
 
-    final private Action1<MapTileLoaded> setLoadedMapTile =
-            new Action1<MapTileLoaded>() {
+    final private Action1<MapTile> setLoadedMapTile =
+            new Action1<MapTile>() {
                 @Override
-                public void call(MapTileLoaded mapTile) {
+                public void call(final MapTile mapTile) {
                     Log.d(TAG, "setLoadedMapTile(" + mapTile + ")");
                     loadedMapTiles.add(mapTile);
+                    invalidate();
+                }
+            };
+
+    final private Action1<PointD> setOffset =
+            new Action1<PointD>() {
+                @Override
+                public void call(PointD offset) {
+                    MapCanvasView.this.offset = offset;
                     invalidate();
                 }
             };
@@ -82,8 +94,8 @@ public class MapCanvasView extends View {
             return;
         }
         for (MapTile mapTile : mapTiles) {
-            MapTileLoaded mapTileLoaded = null;
-            for (MapTileLoaded t : loadedMapTiles) {
+            MapTile mapTileLoaded = null;
+            for (MapTile t : loadedMapTiles) {
                 if (mapTile.getX() == t.getX() &&
                         mapTile.getY() == t.getY() &&
                         mapTile.getZoom() == t.getZoom()) {
@@ -91,13 +103,13 @@ public class MapCanvasView extends View {
                 }
             }
             if (mapTileLoaded != null && mapTileLoaded.getBitmap() != null) {
-                canvas.drawBitmap(mapTileLoaded.getBitmap(),
-                        (float) mapTileLoaded.getScreenX(), (float) mapTileLoaded.getScreenY(),
-                        paint);
+                final float x = (float) (mapTile.getX() * tileSize + offset.x);
+                final float y = (float) (mapTile.getY() * tileSize + offset.y);
+                canvas.drawBitmap(mapTileLoaded.getBitmap(), x, y, paint);
                 canvas.drawRect(
-                        (float) mapTileLoaded.getScreenX(), (float) mapTileLoaded.getScreenY(),
-                        (float) mapTileLoaded.getScreenX() + mapTileLoaded.getBitmap().getWidth() - 1,
-                        (float) mapTileLoaded.getScreenY() + mapTileLoaded.getBitmap().getHeight() - 1,
+                        x, y,
+                        x + mapTileLoaded.getBitmap().getWidth() - 1,
+                        y + mapTileLoaded.getBitmap().getHeight() - 1,
                         rectPaint);
             } else {
                 Log.d(TAG, "Error loading tile: " + mapTile);
