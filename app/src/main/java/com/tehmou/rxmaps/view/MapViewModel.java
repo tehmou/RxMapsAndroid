@@ -5,10 +5,12 @@ import android.util.Log;
 import android.util.Pair;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
-import com.tehmou.rxmaps.pojo.LatLng;
+import com.tehmou.rxmaps.utils.CoordinateProjection;
+import com.tehmou.rxmaps.utils.LatLng;
 import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.MapTileLoaded;
 import com.tehmou.rxmaps.pojo.ZoomLevel;
+import com.tehmou.rxmaps.utils.PointD;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,12 +36,14 @@ public class MapViewModel {
     final private ZoomLevel zoomLevel;
     final private Subject<Pair<Integer, Integer>, Pair<Integer, Integer>> viewSize;
     final private Subject<LatLng, LatLng> centerCoord;
+    final private CoordinateProjection coordinateProjection;
 
     public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
         this.mapNetworkAdapter = mapNetworkAdapter;
         zoomLevel = new ZoomLevel(0);
         viewSize = PublishSubject.create();
         centerCoord = PublishSubject.create();
+        coordinateProjection = new CoordinateProjection(mapNetworkAdapter.getTileSizePx());
 
         final Subject<Collection<MapTile>, Collection<MapTile>> mapTilesSubject =
                 BehaviorSubject.create();
@@ -160,5 +164,10 @@ public class MapViewModel {
 
     public void setViewSize(int width, int height) {
         viewSize.onNext(new Pair<Integer, Integer>(width, height));
+    }
+
+    public PointD getPointCoord(final LatLng latLng) {
+        return coordinateProjection.fromLatLngToPoint(
+                latLng.getLat(), latLng.getLng(), zoomLevel.getZoomLevel());
     }
 }

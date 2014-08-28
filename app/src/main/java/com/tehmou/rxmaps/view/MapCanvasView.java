@@ -10,6 +10,8 @@ import android.view.View;
 
 import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.MapTileLoaded;
+import com.tehmou.rxmaps.utils.LatLng;
+import com.tehmou.rxmaps.utils.PointD;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -90,6 +92,14 @@ public class MapCanvasView extends View {
             } else {
                 Log.d(TAG, "Error loading tile: " + mapTile);
             }
+        }
+        if (viewModel != null) {
+            LatLng latLng = new LatLng(51.507351, -0.127758);
+            PointD point = viewModel.getPointCoord(latLng);
+            Paint circlePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            circlePaint.setColor(Color.RED);
+            circlePaint.setStyle(Paint.Style.FILL);
+            canvas.drawCircle((float) point.x, (float) point.y, 5f, circlePaint);
         }
     }
 
