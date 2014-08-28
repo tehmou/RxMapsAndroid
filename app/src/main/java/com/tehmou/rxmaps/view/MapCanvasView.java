@@ -45,7 +45,7 @@ public class MapCanvasView extends View {
 
     private void init() {
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        this.setBackgroundColor(Color.BLUE);
+        this.setBackgroundColor(Color.LTGRAY);
         rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         rectPaint.setColor(Color.RED);
         rectPaint.setStyle(Paint.Style.STROKE);
