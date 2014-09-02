@@ -9,6 +9,7 @@ import com.tehmou.rxmaps.utils.CoordinateProjection;
 import com.tehmou.rxmaps.utils.LatLng;
 import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.ZoomLevel;
+import com.tehmou.rxmaps.utils.LatLngCalculator;
 import com.tehmou.rxmaps.utils.MapState;
 import com.tehmou.rxmaps.utils.MapTileUtils;
 import com.tehmou.rxmaps.utils.PointD;
@@ -16,6 +17,7 @@ import com.tehmou.rxmaps.utils.PointD;
 import java.util.Collection;
 
 import rx.Observable;
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.subjects.BehaviorSubject;
@@ -32,7 +34,8 @@ public class MapViewModel {
     final private Observable<MapTileBitmap> loadedMapTiles;
     final private ZoomLevel zoomLevel;
     final private Subject<PointD, PointD> viewSize;
-    final private Subject<LatLng, LatLng> centerCoord;
+    final private Subject<LatLng, LatLng> centerCoordSubject;
+    final private Observable<LatLng> centerCoord;
     final private CoordinateProjection coordinateProjection;
     final private Subject<PointD, PointD> dragDelta;
 
@@ -43,8 +46,12 @@ public class MapViewModel {
         dragDelta = PublishSubject.create();
         zoomLevel = new ZoomLevel(3);
         viewSize = PublishSubject.create();
-        centerCoord = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
+        centerCoordSubject = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
         coordinateProjection = new CoordinateProjection(mapNetworkAdapter.getTileSizePx());
+
+        final LatLngCalculator latLngCalculator = new LatLngCalculator(
+                coordinateProjection, dragDelta, centerCoordSubject);
+        centerCoord = latLngCalculator.getObservable();
 
         final Subject<Collection<MapTileDrawable>, Collection<MapTileDrawable>> mapTilesSubject =
                 BehaviorSubject.create();
@@ -59,6 +66,8 @@ public class MapViewModel {
                         MapTileUtils.combineToMapState(coordinateProjection)
                 )
                 .cache();
+
+        latLngCalculator.setMapStateObservable(mapStateObservable);
 
         final Observable<Collection<MapTileDrawable>> mapTiles =
                 mapStateObservable
@@ -101,17 +110,7 @@ public class MapViewModel {
         lastViewSize = new PointD(width, height);
     }
 
-    public void dragDelta(final double dx, final double dy) {
-        Log.d(TAG, "dragDelta(" + dx + ", " + dy + ")");
-        dragDelta.onNext(new PointD(dx, dy));
-    }
-
     public void setTouchDelta(Observable<PointD> touchDelta) {
-        touchDelta.subscribe(new Action1<PointD>() {
-            @Override
-            public void call(PointD pointD) {
-                Log.d(TAG, "touchDelta(" + pointD + ")");
-            }
-        });
+        touchDelta.subscribe(dragDelta);
     }
 }
