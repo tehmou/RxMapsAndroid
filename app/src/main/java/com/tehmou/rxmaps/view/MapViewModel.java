@@ -46,12 +46,10 @@ public class MapViewModel {
     final private Map<Integer, Bitmap> loadedTileBitmaps = new ConcurrentHashMap<Integer, Bitmap>();
     final private Observable<Map<Integer, Bitmap>> loadedTileBitmapsObservable;
 
-    private PointD lastViewSize = null;
-
     public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
         this.mapNetworkAdapter = mapNetworkAdapter;
         dragDelta = PublishSubject.create();
-        zoomLevel = new ZoomLevel(0);
+        zoomLevel = new ZoomLevel(3);
         viewSize = PublishSubject.create();
         centerCoordSubject = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
         coordinateProjection = new CoordinateProjection(mapNetworkAdapter.getTileSizePx());
