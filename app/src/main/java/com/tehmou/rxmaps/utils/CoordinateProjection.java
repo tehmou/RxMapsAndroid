@@ -31,14 +31,14 @@ public class CoordinateProjection {
         return new PointD(x * numTiles, y * numTiles);
     }
 
-    public PointD fromPointToLatLng(final PointD point, final int zoom) {
+    public LatLng fromPointToLatLng(final PointD point, final int zoom) {
         final int numTiles = 1 << zoom;
         final double x = point.x / numTiles;
         final double y = point.y / numTiles;
         final double lng = (x - pxOrigin.x) / pxPerLonDegree;
         final double latRadians = (y - pxOrigin.y) / -pxPerLonRadian;
         final double lat = Math.toDegrees(2 * Math.atan(Math.exp(latRadians)) - Math.PI / 2);
-        return new PointD(lat, lng);
+        return new LatLng(lat, lng);
     }
 
     public int pxSize(final int zoom) {

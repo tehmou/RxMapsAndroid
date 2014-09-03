@@ -32,9 +32,9 @@ public class MapNetworkAdapterSimple implements MapNetworkAdapter {
         Log.d(TAG, "getMapTile(" + zoom + ", " + x + ", " + y + ")");
         final String url = String.format(urlFormat, zoom, x, y);
 
-        return Observable.from(readFromDisk(zoom, x, y));
-        //return networkClient
-        //        .loadBitmap(url);
+        //return Observable.from(readFromDisk(zoom, x, y));
+        return networkClient
+                .loadBitmap(url);
         //        .doOnNext(writeOnDisk(zoom, x, y));
     }
 

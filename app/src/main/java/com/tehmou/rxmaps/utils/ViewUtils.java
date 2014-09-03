@@ -25,8 +25,8 @@ public class ViewUtils {
                     break;
                 case MotionEvent.ACTION_MOVE:
                     if (lastTouch != null) {
-                        deltaStream.onNext(
-                                new PointD(event.getX() - lastTouch.x, event.getY() - lastTouch.y));
+                        final PointD delta = new PointD(event.getX() - lastTouch.x, event.getY() - lastTouch.y);
+                        deltaStream.onNext(delta);
                         lastTouch = new PointD(event.getX(), event.getY());
                     }
                     break;
