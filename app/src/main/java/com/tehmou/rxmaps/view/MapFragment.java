@@ -1,6 +1,7 @@
 package com.tehmou.rxmaps.view;
 
 import android.app.Fragment;
+import android.content.ContentResolver;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -40,6 +41,8 @@ public class MapFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+        final ContentResolver contentResolver = getActivity().getContentResolver();
+
         NetworkClientOkHttp networkClient = new NetworkClientOkHttp();
         MapNetworkAdapter mapNetworkClient =
                 new MapNetworkAdapterSimple(networkClient, getUrlFormat());
