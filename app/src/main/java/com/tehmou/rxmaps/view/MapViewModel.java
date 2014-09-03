@@ -14,6 +14,7 @@ import com.tehmou.rxmaps.utils.LatLngCalculator;
 import com.tehmou.rxmaps.utils.MapState;
 import com.tehmou.rxmaps.utils.MapTileUtils;
 import com.tehmou.rxmaps.utils.PointD;
+import com.tehmou.rxmaps.utils.TileBitmapLoader;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -43,7 +44,6 @@ public class MapViewModel {
     final private CoordinateProjection coordinateProjection;
     final private Subject<PointD, PointD> dragDelta;
 
-    final private Map<Integer, Bitmap> loadedTileBitmaps = new ConcurrentHashMap<Integer, Bitmap>();
     final private Observable<Map<Integer, Bitmap>> loadedTileBitmapsObservable;
 
     public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
@@ -87,24 +87,7 @@ public class MapViewModel {
                 .subscribe(mapTilesSubject);
 
         mapTiles
-                .flatMap(MapTileUtils.expandCollection)
-                .filter(new Func1<MapTileDrawable, Boolean>() {
-                    @Override
-                    public Boolean call(final MapTileDrawable mapTileDrawable) {
-                        return !loadedTileBitmaps.containsKey(mapTileDrawable.tileHashCode());
-                    }
-                })
-                .flatMap(MapTileUtils.loadMapTile(mapNetworkAdapter))
-                .map(new Func1<MapTileBitmap, Map<Integer, Bitmap>>() {
-                    @Override
-                    public Map<Integer, Bitmap> call(final MapTileBitmap mapTileBitmap) {
-                        if (mapTileBitmap != null && mapTileBitmap.getBitmap() != null) {
-                            loadedTileBitmaps.put(mapTileBitmap.getTileHashCode(),
-                                    mapTileBitmap.getBitmap());
-                        }
-                        return loadedTileBitmaps;
-                    }
-                })
+                .flatMap(new TileBitmapLoader(mapNetworkAdapter))
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(loadedTileBitmapsSubject);
 
