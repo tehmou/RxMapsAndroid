@@ -10,6 +10,7 @@ import com.tehmou.rxmaps.R;
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.network.MapNetworkAdapterSimple;
 import com.tehmou.rxmaps.network.NetworkClientOkHttp;
+import com.tehmou.rxmaps.utils.TileBitmapLoader;
 
 /**
  * Created by ttuo on 26/08/14.
@@ -42,7 +43,8 @@ public class MapFragment extends Fragment {
         NetworkClientOkHttp networkClient = new NetworkClientOkHttp();
         MapNetworkAdapter mapNetworkClient =
                 new MapNetworkAdapterSimple(networkClient, getUrlFormat());
-        MapViewModel mapViewModel = new MapViewModel(mapNetworkClient);
+        MapViewModel mapViewModel = new MapViewModel(mapNetworkClient.getTileSizePx(),
+                new TileBitmapLoader(mapNetworkClient));
         mapView.setViewModel(mapViewModel);
     }
 }

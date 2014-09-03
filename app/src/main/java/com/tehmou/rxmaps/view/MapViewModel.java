@@ -35,7 +35,6 @@ import rx.subjects.Subject;
  */
 public class MapViewModel {
     private static final String TAG = MapViewModel.class.getCanonicalName();
-    final private MapNetworkAdapter mapNetworkAdapter;
     final private Observable<Collection<MapTileDrawable>> mapTiles;
     final private ZoomLevel zoomLevel;
     final private Subject<PointD, PointD> viewSize;
@@ -46,13 +45,12 @@ public class MapViewModel {
 
     final private Observable<Map<Integer, Bitmap>> loadedTileBitmapsObservable;
 
-    public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
-        this.mapNetworkAdapter = mapNetworkAdapter;
+    public MapViewModel(final int tileSizePx, final TileBitmapLoader tileBitmapLoader) {
         dragDelta = PublishSubject.create();
         zoomLevel = new ZoomLevel(3);
         viewSize = PublishSubject.create();
         centerCoordSubject = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
-        coordinateProjection = new CoordinateProjection(mapNetworkAdapter.getTileSizePx());
+        coordinateProjection = new CoordinateProjection(tileSizePx);
 
         final LatLngCalculator latLngCalculator = new LatLngCalculator(
                 coordinateProjection, dragDelta, centerCoordSubject);
@@ -80,14 +78,14 @@ public class MapViewModel {
 
         final Observable<Collection<MapTileDrawable>> mapTiles =
                 mapStateObservable
-                        .map(MapTileUtils.calculateMapTiles(mapNetworkAdapter.getTileSizePx()));
+                        .map(MapTileUtils.calculateMapTiles(tileSizePx));
 
         mapTiles
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(mapTilesSubject);
 
         mapTiles
-                .flatMap(new TileBitmapLoader(mapNetworkAdapter))
+                .flatMap(tileBitmapLoader)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(loadedTileBitmapsSubject);
 
