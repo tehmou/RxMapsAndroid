@@ -1,14 +1,10 @@
 package com.tehmou.rxmaps.view;
 
 import android.graphics.Bitmap;
-import android.util.Log;
 
-import com.tehmou.rxmaps.network.MapNetworkAdapter;
-import com.tehmou.rxmaps.pojo.MapTileBitmap;
 import com.tehmou.rxmaps.pojo.MapTileDrawable;
 import com.tehmou.rxmaps.utils.CoordinateProjection;
 import com.tehmou.rxmaps.utils.LatLng;
-import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.ZoomLevel;
 import com.tehmou.rxmaps.utils.LatLngCalculator;
 import com.tehmou.rxmaps.utils.MapState;
@@ -17,15 +13,10 @@ import com.tehmou.rxmaps.utils.PointD;
 import com.tehmou.rxmaps.utils.TileBitmapLoader;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import rx.Observable;
-import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
-import rx.functions.Func1;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
