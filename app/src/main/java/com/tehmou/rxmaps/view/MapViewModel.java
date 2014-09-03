@@ -44,14 +44,18 @@ public class MapViewModel {
     public MapViewModel(final MapNetworkAdapter mapNetworkAdapter) {
         this.mapNetworkAdapter = mapNetworkAdapter;
         dragDelta = PublishSubject.create();
-        zoomLevel = new ZoomLevel(3);
+        zoomLevel = new ZoomLevel(0);
         viewSize = PublishSubject.create();
         centerCoordSubject = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
         coordinateProjection = new CoordinateProjection(mapNetworkAdapter.getTileSizePx());
 
         final LatLngCalculator latLngCalculator = new LatLngCalculator(
                 coordinateProjection, dragDelta, centerCoordSubject);
-        centerCoord = latLngCalculator.getObservable();
+
+        centerCoord = Observable.merge(
+                centerCoordSubject,
+                latLngCalculator.getObservable())
+                .distinctUntilChanged();
 
         final Subject<Collection<MapTileDrawable>, Collection<MapTileDrawable>> mapTilesSubject =
                 BehaviorSubject.create();

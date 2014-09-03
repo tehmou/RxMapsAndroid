@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.util.AttributeSet;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.DragEvent;
 import android.view.MotionEvent;
@@ -31,6 +32,7 @@ public class MapCanvasView extends View {
     private static final String TAG = MapCanvasView.class.getCanonicalName();
     private Paint paint;
     private Paint rectPaint;
+    private Paint textPaint;
     private MapViewModel viewModel;
 
     private Collection<MapTileDrawable> mapTiles;
@@ -59,6 +61,10 @@ public class MapCanvasView extends View {
         rectPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         rectPaint.setColor(Color.RED);
         rectPaint.setStyle(Paint.Style.STROKE);
+        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setColor(Color.BLACK);
+        textPaint.setTextSize(20);
+        textPaint.setTextAlign(Paint.Align.LEFT);
     }
 
     public void setViewModel(final MapViewModel mapViewModel) {
@@ -89,29 +95,27 @@ public class MapCanvasView extends View {
             };
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(final Canvas canvas) {
         if (mapTiles == null) {
             return;
         }
         for (MapTileDrawable mapTile : mapTiles) {
             final int hash = mapTile.tileHashCode();
-            if (mapTileBitmaps.containsKey(hash)) {
-                final Bitmap bitmap = mapTileBitmaps.get(hash);
-                if (bitmap != null) {
-                    final float x = (float) mapTile.getScreenX();
-                    final float y = (float) mapTile.getScreenY();
-                    canvas.drawBitmap(bitmap, x, y, paint);
-                    canvas.drawRect(
-                            x, y,
-                            x + bitmap.getWidth() - 1,
-                            y + bitmap.getHeight() - 1,
-                            rectPaint);
-                } else {
-                    Log.d(TAG, "Loaded bitmap was null: " + mapTile);
-                }
+
+            final float x = (float) mapTile.getScreenX();
+            final float y = (float) mapTile.getScreenY();
+            final Bitmap bitmap = mapTileBitmaps.get(hash);
+            if (bitmap != null) {
+                canvas.drawBitmap(bitmap, x, y, paint);
             } else {
-                Log.d(TAG, "Error loading tile: " + mapTile);
+                Log.d(TAG, "Loaded bitmap was null: " + mapTile);
             }
+            canvas.drawRect(
+                    x, y,
+                    x + (float) mapTile.getSize() - 1,
+                    y + (float) mapTile.getSize() - 1,
+                    rectPaint);
+            canvas.drawText(mapTile.getX() + ", " + mapTile.getY(), x + 3, y + 20, textPaint);
         }
     }
 

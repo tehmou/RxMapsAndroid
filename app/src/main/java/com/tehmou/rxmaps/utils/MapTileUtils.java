@@ -62,7 +62,7 @@ public class MapTileUtils {
         for (int i = firstTileX; i <= firstTileX + numX; i++) {
             for (int n = firstTileY; n <= firstTileY + numY; n++) {
                 final MapTileDrawable mapTile = new MapTileDrawable(
-                        zoomLevel, i, n,
+                        zoomLevel, i, n, tileSizePx,
                         i*tileSizePx + offset.x,
                         n*tileSizePx + offset.y);
                 mapTileList.add(mapTile);

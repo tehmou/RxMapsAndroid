@@ -19,4 +19,16 @@ public class LatLng {
     public double getLng() {
         return lng;
     }
+
+    @Override
+    public int hashCode() {
+        int hash = Double.valueOf(lat).hashCode();
+        hash += 31 * hash + Double.valueOf(lng).hashCode();
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o != null && o instanceof LatLng && hashCode() == o.hashCode();
+    }
 }

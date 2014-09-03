@@ -26,11 +26,11 @@ public class LatLngCalculator {
         final Subject<LatLng, LatLng> latLngSubject = BehaviorSubject.create();
         pixelDelta.subscribe(new Action1<PointD>() {
             @Override
-            public void call(PointD pointD) {
-                Log.v(TAG, "pixelDelta(" + pointD + ")");
-                final double cx = mapState.offset.x + mapState.viewSize.x/2.0;
-                final double cy = mapState.offset.y + mapState.viewSize.y/2.0;
-                final PointD newPoint = new PointD(cx - pointD.x, cy - pointD.y);
+            public void call(final PointD pixedDelta) {
+                Log.v(TAG, "pixelDelta(" + pixedDelta + ")");
+                final double cx = mapState.viewSize.x/2.0 - mapState.offset.x;
+                final double cy = mapState.viewSize.y/2.0 - mapState.offset.y;
+                final PointD newPoint = new PointD(cx - pixedDelta.x, cy - pixedDelta.y);
                 final LatLng newLatLng = coordinateProjection.fromPointToLatLng(newPoint, mapState.zoomLevel);
                 latLngSubject.onNext(newLatLng);
             }
