@@ -132,7 +132,6 @@ public class MapViewModel {
 
     public void setViewSize(int width, int height) {
         viewSize.onNext(new PointD(width, height));
-        lastViewSize = new PointD(width, height);
     }
 
     public void setTouchDelta(Observable<PointD> touchDelta) {
