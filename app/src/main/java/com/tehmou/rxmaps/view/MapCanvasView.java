@@ -36,7 +36,7 @@ public class MapCanvasView extends View {
     private MapViewModel viewModel;
 
     private Collection<MapTileDrawable> mapTiles;
-    final private Map<Integer, Bitmap> mapTileBitmaps = new HashMap<Integer, Bitmap>();
+    private Map<Integer, Bitmap> mapTileBitmaps;
     final private Observable<PointD> touchDelta;
 
     public MapCanvasView(Context context) {
@@ -71,7 +71,7 @@ public class MapCanvasView extends View {
         this.viewModel = mapViewModel;
         mapViewModel.setTouchDelta(touchDelta);
         mapViewModel.getMapTiles().subscribe(setMapTiles);
-        mapViewModel.getLoadedMapTiles().subscribe(addLoadedMapTile);
+        mapViewModel.getMapTileBitmaps().subscribe(setMapTileBitmaps);
     }
 
     final private Action1<Collection<MapTileDrawable>> setMapTiles =
@@ -84,12 +84,12 @@ public class MapCanvasView extends View {
                 }
             };
 
-    final private Action1<MapTileBitmap> addLoadedMapTile =
-            new Action1<MapTileBitmap>() {
+    final private Action1<Map<Integer, Bitmap>> setMapTileBitmaps =
+            new Action1<Map<Integer, Bitmap>>() {
                 @Override
-                public void call(final MapTileBitmap mapTile) {
-                    Log.d(TAG, "setLoadedMapTile(" + mapTile + ")");
-                    mapTileBitmaps.put(mapTile.getTileHashCode(), mapTile.getBitmap());
+                public void call(final Map<Integer, Bitmap> mapTileBitmaps) {
+                    Log.d(TAG, "setMapTileBitmaps(" + mapTileBitmaps + ")");
+                    MapCanvasView.this.mapTileBitmaps = mapTileBitmaps;
                     invalidate();
                 }
             };
@@ -104,7 +104,7 @@ public class MapCanvasView extends View {
 
             final float x = (float) mapTile.getScreenX();
             final float y = (float) mapTile.getScreenY();
-            final Bitmap bitmap = mapTileBitmaps.get(hash);
+            final Bitmap bitmap = mapTileBitmaps != null ? mapTileBitmaps.get(hash) : null;
             if (bitmap != null) {
                 canvas.drawBitmap(bitmap, x, y, paint);
             } else {

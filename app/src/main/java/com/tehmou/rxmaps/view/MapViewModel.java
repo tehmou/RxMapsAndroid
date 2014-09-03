@@ -1,5 +1,6 @@
 package com.tehmou.rxmaps.view;
 
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
@@ -15,11 +16,15 @@ import com.tehmou.rxmaps.utils.MapTileUtils;
 import com.tehmou.rxmaps.utils.PointD;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.functions.Func1;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -31,13 +36,15 @@ public class MapViewModel {
     private static final String TAG = MapViewModel.class.getCanonicalName();
     final private MapNetworkAdapter mapNetworkAdapter;
     final private Observable<Collection<MapTileDrawable>> mapTiles;
-    final private Observable<MapTileBitmap> loadedMapTiles;
     final private ZoomLevel zoomLevel;
     final private Subject<PointD, PointD> viewSize;
     final private Subject<LatLng, LatLng> centerCoordSubject;
     final private Observable<LatLng> centerCoord;
     final private CoordinateProjection coordinateProjection;
     final private Subject<PointD, PointD> dragDelta;
+
+    final private Map<Integer, Bitmap> loadedTileBitmaps = new ConcurrentHashMap<Integer, Bitmap>();
+    final private Observable<Map<Integer, Bitmap>> loadedTileBitmapsObservable;
 
     private PointD lastViewSize = null;
 
@@ -59,7 +66,7 @@ public class MapViewModel {
 
         final Subject<Collection<MapTileDrawable>, Collection<MapTileDrawable>> mapTilesSubject =
                 BehaviorSubject.create();
-        final Subject<MapTileBitmap, MapTileBitmap> loadedMapTilesSubject =
+        final Subject<Map<Integer, Bitmap>, Map<Integer, Bitmap>> loadedTileBitmapsSubject =
                 PublishSubject.create();
 
         Observable<MapState> mapStateObservable =
@@ -83,11 +90,27 @@ public class MapViewModel {
 
         mapTiles
                 .flatMap(MapTileUtils.expandCollection)
+                .filter(new Func1<MapTileDrawable, Boolean>() {
+                    @Override
+                    public Boolean call(final MapTileDrawable mapTileDrawable) {
+                        return !loadedTileBitmaps.containsKey(mapTileDrawable.tileHashCode());
+                    }
+                })
                 .flatMap(MapTileUtils.loadMapTile(mapNetworkAdapter))
+                .map(new Func1<MapTileBitmap, Map<Integer, Bitmap>>() {
+                    @Override
+                    public Map<Integer, Bitmap> call(final MapTileBitmap mapTileBitmap) {
+                        if (mapTileBitmap != null && mapTileBitmap.getBitmap() != null) {
+                            loadedTileBitmaps.put(mapTileBitmap.getTileHashCode(),
+                                    mapTileBitmap.getBitmap());
+                        }
+                        return loadedTileBitmaps;
+                    }
+                })
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(loadedMapTilesSubject);
+                .subscribe(loadedTileBitmapsSubject);
 
-        loadedMapTiles = loadedMapTilesSubject;
+        loadedTileBitmapsObservable = loadedTileBitmapsSubject;
         this.mapTiles = mapTilesSubject;
     }
 
@@ -95,8 +118,8 @@ public class MapViewModel {
         return mapTiles;
     }
 
-    public Observable<MapTileBitmap> getLoadedMapTiles() {
-        return loadedMapTiles;
+    public Observable<Map<Integer, Bitmap>> getMapTileBitmaps() {
+        return loadedTileBitmapsObservable;
     }
 
     public void zoomIn() {
