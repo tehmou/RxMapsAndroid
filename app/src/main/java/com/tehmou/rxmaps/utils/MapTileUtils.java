@@ -58,9 +58,14 @@ public class MapTileUtils {
         final int numX = (int) Math.ceil(viewSize.x / tileSizePx);
         final int numY = (int) Math.ceil(viewSize.y / tileSizePx);
 
+        final int left = Math.max(0, firstTileX);
+        final int right = Math.min(1 << zoomLevel, firstTileX + numX);
+        final int top = Math.max(0, firstTileY);
+        final int bottom = Math.min(1 << zoomLevel, firstTileY + numY);
+
         final List<MapTileDrawable> mapTileList = new ArrayList<MapTileDrawable>();
-        for (int i = firstTileX; i <= firstTileX + numX; i++) {
-            for (int n = firstTileY; n <= firstTileY + numY; n++) {
+        for (int i = left; i < right; i++) {
+            for (int n = top; n < bottom; n++) {
                 final MapTileDrawable mapTile = new MapTileDrawable(
                         zoomLevel, i, n, tileSizePx,
                         i*tileSizePx + offset.x,
