@@ -41,13 +41,12 @@ public class MapFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        final ContentResolver contentResolver = getActivity().getContentResolver();
 
         NetworkClientOkHttp networkClient = new NetworkClientOkHttp();
         MapNetworkAdapter mapNetworkClient =
                 new MapNetworkAdapterSimple(networkClient, getUrlFormat());
         MapViewModel mapViewModel = new MapViewModel(mapNetworkClient.getTileSizePx(),
-                new TileBitmapLoader(mapNetworkClient));
+                new TileBitmapLoader(getActivity().getContentResolver(), mapNetworkClient));
         mapView.setViewModel(mapViewModel);
     }
 }

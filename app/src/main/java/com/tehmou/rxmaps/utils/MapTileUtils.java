@@ -1,12 +1,17 @@
 package com.tehmou.rxmaps.utils;
 
+import android.content.ContentResolver;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.util.Log;
 
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.MapTileBitmap;
 import com.tehmou.rxmaps.pojo.MapTileDrawable;
+import com.tehmou.rxmaps.provider.MapTileBitmapsTable;
+import com.tehmou.rxmaps.provider.RxMapsContentProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -90,10 +95,21 @@ public class MapTileUtils {
         };
     }
 
-    static public Func1<MapTile, Observable<MapTileBitmap>> loadMapTile(final MapNetworkAdapter mapNetworkAdapter) {
+    static public Func1<MapTile, Observable<MapTileBitmap>> loadMapTile(
+            final ContentResolver contentResolver,
+            final MapNetworkAdapter mapNetworkAdapter) {
         return new Func1<MapTile, Observable<MapTileBitmap>>() {
             @Override
             public Observable<MapTileBitmap> call(final MapTile mapTile) {
+                Uri uri = RxMapsContentProvider.MAP_TILE_BITMAPS_CONTENT_URI;
+                uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getZoom()));
+                uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getX()));
+                uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getY()));
+                Cursor cursor = contentResolver.query(uri, MapTileBitmapsTable.PROJECTION, null, null, null);
+                if (cursor != null) {
+                    cursor.close();
+                }
+
                 return mapNetworkAdapter.getMapTile(
                         mapTile.getZoom(), mapTile.getX(), mapTile.getY())
                         .map(new Func1<Bitmap, MapTileBitmap>() {
