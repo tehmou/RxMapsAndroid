@@ -44,7 +44,7 @@ public class MapViewModel {
         coordinateProjection = new CoordinateProjection(tileSizePx);
 
         final LatLngCalculator latLngCalculator = new LatLngCalculator(
-                coordinateProjection, dragDelta, centerCoordSubject);
+                coordinateProjection, dragDelta);
 
         centerCoord = Observable.merge(
                 centerCoordSubject,

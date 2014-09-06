@@ -17,12 +17,10 @@ import rx.subjects.Subject;
 public class LatLngCalculator {
     private static final String TAG = LatLngCalculator.class.getCanonicalName();
     final private Subject<LatLng, LatLng> observable;
-    private LatLng lastLatLng;
     private MapState mapState;
 
     public LatLngCalculator(final CoordinateProjection coordinateProjection,
-                            final Observable<PointD> pixelDelta,
-                            final Observable<LatLng> latLng) {
+                            final Observable<PointD> pixelDelta) {
         final Subject<LatLng, LatLng> latLngSubject = BehaviorSubject.create();
         pixelDelta.subscribe(new Action1<PointD>() {
             @Override
@@ -33,13 +31,6 @@ public class LatLngCalculator {
                 final PointD newPoint = new PointD(cx - pixedDelta.x, cy - pixedDelta.y);
                 final LatLng newLatLng = coordinateProjection.fromPointToLatLng(newPoint, mapState.zoomLevel);
                 latLngSubject.onNext(newLatLng);
-            }
-        });
-        latLng.subscribe(new Action1<LatLng>() {
-            @Override
-            public void call(LatLng latLng) {
-                LatLngCalculator.this.lastLatLng = latLng;
-                latLngSubject.onNext(latLng);
             }
         });
         observable = latLngSubject;
