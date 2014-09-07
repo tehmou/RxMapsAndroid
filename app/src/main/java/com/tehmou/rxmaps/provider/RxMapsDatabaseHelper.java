@@ -11,7 +11,7 @@ import android.util.Log;
 public class RxMapsDatabaseHelper extends SQLiteOpenHelper {
     private static final String TAG = RxMapsDatabaseHelper.class.getCanonicalName();
     public static final String DATABASE_NAME = "com.tehmou.rxmaps";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 3;
 
     public RxMapsDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);

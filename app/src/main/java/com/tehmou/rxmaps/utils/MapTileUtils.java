@@ -1,11 +1,14 @@
 package com.tehmou.rxmaps.utils;
 
 import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
 
+import com.tehmou.rxmaps.data.MapTileFileUtils;
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.MapTileBitmap;
@@ -13,6 +16,7 @@ import com.tehmou.rxmaps.pojo.MapTileDrawable;
 import com.tehmou.rxmaps.provider.MapTileBitmapsTable;
 import com.tehmou.rxmaps.provider.RxMapsContentProvider;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -95,33 +99,76 @@ public class MapTileUtils {
         };
     }
 
+    static private Uri createUri(final MapTile mapTile) {
+        Uri uri = RxMapsContentProvider.MAP_TILE_BITMAPS_CONTENT_URI;
+        uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getZoom()));
+        uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getX()));
+        uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getY()));
+        return uri;
+    }
+
+    static private byte[] bitmapToByte(final Bitmap bitmap) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, bos);
+        return bos.toByteArray();
+    }
+
+    static private Bitmap byteToBitmap(final byte[] bitmapBlob) {
+        return BitmapFactory.decodeByteArray(bitmapBlob, 0, bitmapBlob.length);
+    }
+
     static public Func1<MapTile, Observable<MapTileBitmap>> loadMapTile(
             final ContentResolver contentResolver,
             final MapNetworkAdapter mapNetworkAdapter) {
         return new Func1<MapTile, Observable<MapTileBitmap>>() {
             @Override
             public Observable<MapTileBitmap> call(final MapTile mapTile) {
-                Uri uri = RxMapsContentProvider.MAP_TILE_BITMAPS_CONTENT_URI;
-                uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getZoom()));
-                uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getX()));
-                uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getY()));
-                Cursor cursor = contentResolver.query(uri, MapTileBitmapsTable.PROJECTION, null, null, null);
-                if (cursor != null) {
-                    cursor.close();
-                }
-
                 return mapNetworkAdapter.getMapTile(
                         mapTile.getZoom(), mapTile.getX(), mapTile.getY())
                         .map(new Func1<Bitmap, MapTileBitmap>() {
                             @Override
                             public MapTileBitmap call(Bitmap bitmap) {
-                                return new MapTileBitmap(mapTile.tileHashCode(), bitmap);
+                                return new MapTileBitmap(mapTile, bitmap);
+                            }
+                        })
+                        .map(new Func1<MapTileBitmap, MapTileBitmap>() {
+                            @Override
+                            public MapTileBitmap call(MapTileBitmap mapTileBitmap) {
+                                MapTileFileUtils.writeOnDisk(
+                                        MapTileFileUtils.getFilename(mapTileBitmap.getMapTile()), mapTileBitmap.getBitmap());
+                                return mapTileBitmap;
+                            }
+                        })
+                        .map(new Func1<MapTileBitmap, MapTileBitmap>() {
+                            @Override
+                            public MapTileBitmap call(MapTileBitmap mapTileBitmap) {
+                                final Uri uri = createUri(mapTileBitmap.getMapTile());
+                                ContentValues contentValues = new ContentValues();
+                                contentValues.put(MapTileBitmapsTable.COLUMN_BITMAP_FILENAME,
+                                        MapTileFileUtils.getFilename(mapTileBitmap.getMapTile()));
+                                contentResolver.insert(uri, contentValues);
+                                return mapTileBitmap;
+                            }
+                        })
+                        .map(new Func1<MapTileBitmap, MapTileBitmap>() {
+                            @Override
+                            public MapTileBitmap call(MapTileBitmap mapTileBitmap) {
+                                final Uri uri = createUri(mapTileBitmap.getMapTile());
+                                final Cursor cursor = contentResolver.query(uri, MapTileBitmapsTable.PROJECTION, null, null, null);
+                                if (cursor == null) {
+                                    return null;
+                                }
+                                cursor.moveToFirst();
+                                final String filename = cursor.getString(cursor.getColumnIndex(MapTileBitmapsTable.COLUMN_BITMAP_FILENAME));
+                                cursor.close();
+                                final Bitmap bitmap = MapTileFileUtils.readFromDisk(filename);
+                                return new MapTileBitmap(mapTileBitmap.getMapTile(), bitmap);
                             }
                         })
                         .onErrorResumeNext(new Func1<Throwable, Observable<? extends MapTileBitmap>>() {
                             @Override
                             public Observable<? extends MapTileBitmap> call(Throwable throwable) {
-                                return Observable.from(new MapTileBitmap(mapTile.tileHashCode(), null));
+                                return Observable.from(new MapTileBitmap(mapTile, null));
                             }
                         });
             }

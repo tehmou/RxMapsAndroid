@@ -12,9 +12,10 @@ public class MapTileBitmapsTable {
     public static final String COLUMN_X = "x";
     public static final String COLUMN_Y = "y";
     public static final String COLUMN_ZOOM_LEVEL = "zoom_level";
+    public static final String COLUMN_BITMAP_FILENAME = "bitmap_filename";
     public static final String COLUMN_TIMESTAMP = "timestamp";
     public static final String[] PROJECTION = new String[] {
-            COLUMN_X, COLUMN_Y, COLUMN_ZOOM_LEVEL };
+            COLUMN_X, COLUMN_Y, COLUMN_ZOOM_LEVEL, COLUMN_BITMAP_FILENAME };
 
     private MapTileBitmapsTable () { }
 
@@ -29,6 +30,8 @@ public class MapTileBitmapsTable {
                 + COLUMN_Y + " INTEGER"
                 + ", "
                 + COLUMN_ZOOM_LEVEL + " INTEGER"
+                + ", "
+                + COLUMN_BITMAP_FILENAME + " STRING"
                 + ", "
                 + COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP"
                 + ")";

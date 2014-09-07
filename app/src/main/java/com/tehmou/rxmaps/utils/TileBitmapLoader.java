@@ -43,7 +43,7 @@ public class TileBitmapLoader implements Func1<Collection<MapTileDrawable>, Obse
                     @Override
                     public Map<Integer, Bitmap> call(final MapTileBitmap mapTileBitmap) {
                         if (mapTileBitmap != null && mapTileBitmap.getBitmap() != null) {
-                            loadedTileBitmaps.put(mapTileBitmap.getTileHashCode(),
+                            loadedTileBitmaps.put(mapTileBitmap.getMapTile().tileHashCode(),
                                     mapTileBitmap.getBitmap());
                         }
                         return loadedTileBitmaps;
