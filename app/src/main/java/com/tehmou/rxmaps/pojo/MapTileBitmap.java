@@ -6,16 +6,16 @@ import android.graphics.Bitmap;
  * Created by ttuo on 28/08/14.
  */
 public class MapTileBitmap {
-    final private int tileHashCode;
+    final private MapTile mapTile;
     final private Bitmap bitmap;
 
-    public MapTileBitmap(int tileHashCode, Bitmap bitmap) {
-        this.tileHashCode = tileHashCode;
+    public MapTileBitmap(MapTile mapTile, Bitmap bitmap) {
+        this.mapTile = mapTile;
         this.bitmap = bitmap;
     }
 
-    public int getTileHashCode() {
-        return tileHashCode;
+    public MapTile getMapTile() {
+        return mapTile;
     }
 
     public Bitmap getBitmap() {

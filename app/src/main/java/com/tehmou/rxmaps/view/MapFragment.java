@@ -1,6 +1,7 @@
 package com.tehmou.rxmaps.view;
 
 import android.app.Fragment;
+import android.content.ContentResolver;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,6 +11,7 @@ import com.tehmou.rxmaps.R;
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.network.MapNetworkAdapterSimple;
 import com.tehmou.rxmaps.network.NetworkClientOkHttp;
+import com.tehmou.rxmaps.utils.TileBitmapLoader;
 
 /**
  * Created by ttuo on 26/08/14.
@@ -39,10 +41,12 @@ public class MapFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
+
         NetworkClientOkHttp networkClient = new NetworkClientOkHttp();
         MapNetworkAdapter mapNetworkClient =
                 new MapNetworkAdapterSimple(networkClient, getUrlFormat());
-        MapViewModel mapViewModel = new MapViewModel(mapNetworkClient);
+        MapViewModel mapViewModel = new MapViewModel(mapNetworkClient.getTileSizePx(),
+                new TileBitmapLoader(getActivity().getContentResolver(), mapNetworkClient));
         mapView.setViewModel(mapViewModel);
     }
 }
