@@ -99,7 +99,7 @@ public class MapTileUtils {
         };
     }
 
-    static private Uri createUri(final MapTile mapTile) {
+    static public Uri createUri(final MapTile mapTile) {
         Uri uri = RxMapsContentProvider.MAP_TILE_BITMAPS_CONTENT_URI;
         uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getZoom()));
         uri = Uri.withAppendedPath(uri, String.valueOf(mapTile.getX()));
@@ -118,7 +118,6 @@ public class MapTileUtils {
     }
 
     static public Func1<MapTile, Observable<MapTileBitmap>> loadMapTile(
-            final ContentResolver contentResolver,
             final MapNetworkAdapter mapNetworkAdapter) {
         return new Func1<MapTile, Observable<MapTileBitmap>>() {
             @Override
@@ -131,43 +130,11 @@ public class MapTileUtils {
                                 return new MapTileBitmap(mapTile, bitmap);
                             }
                         })
-                        .map(new Func1<MapTileBitmap, MapTileBitmap>() {
-                            @Override
-                            public MapTileBitmap call(MapTileBitmap mapTileBitmap) {
-                                MapTileFileUtils.writeOnDisk(
-                                        MapTileFileUtils.getFilename(mapTileBitmap.getMapTile()), mapTileBitmap.getBitmap());
-                                return mapTileBitmap;
-                            }
-                        })
-                        .map(new Func1<MapTileBitmap, MapTileBitmap>() {
-                            @Override
-                            public MapTileBitmap call(MapTileBitmap mapTileBitmap) {
-                                final Uri uri = createUri(mapTileBitmap.getMapTile());
-                                ContentValues contentValues = new ContentValues();
-                                contentValues.put(MapTileBitmapsTable.COLUMN_BITMAP_FILENAME,
-                                        MapTileFileUtils.getFilename(mapTileBitmap.getMapTile()));
-                                contentResolver.insert(uri, contentValues);
-                                return mapTileBitmap;
-                            }
-                        })
-                        .map(new Func1<MapTileBitmap, MapTileBitmap>() {
-                            @Override
-                            public MapTileBitmap call(MapTileBitmap mapTileBitmap) {
-                                final Uri uri = createUri(mapTileBitmap.getMapTile());
-                                final Cursor cursor = contentResolver.query(uri, MapTileBitmapsTable.PROJECTION, null, null, null);
-                                if (cursor == null) {
-                                    return null;
-                                }
-                                cursor.moveToFirst();
-                                final String filename = cursor.getString(cursor.getColumnIndex(MapTileBitmapsTable.COLUMN_BITMAP_FILENAME));
-                                cursor.close();
-                                final Bitmap bitmap = MapTileFileUtils.readFromDisk(filename);
-                                return new MapTileBitmap(mapTileBitmap.getMapTile(), bitmap);
-                            }
-                        })
                         .onErrorResumeNext(new Func1<Throwable, Observable<? extends MapTileBitmap>>() {
                             @Override
                             public Observable<? extends MapTileBitmap> call(Throwable throwable) {
+                                Log.e(TAG, "Error loading tile (" + mapTile + ")", throwable);
+                                throwable.printStackTrace();
                                 return Observable.from(new MapTileBitmap(mapTile, null));
                             }
                         });
