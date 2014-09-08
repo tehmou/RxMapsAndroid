@@ -3,7 +3,7 @@ RxMapsAndroid
 
 This project is a generic maps client for Android built on RxJava.
 
-The purpose of this project is not be a competitors for other map clients and map SDKs, but to illustrate usage of RxJava in a real life scenario.
+The purpose of this project is not be a competitor for other map clients and map SDKs, but to illustrate usage of RxJava in a real life scenario.
 
 Technology stack
 ---------
