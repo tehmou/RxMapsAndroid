@@ -2,14 +2,9 @@ buildscript {
     repositories {
         mavenCentral()
     }
-
-    dependencies {
-        classpath 'me.tatarka:gradle-retrolambda:2.2.3'
-    }
 }
 
 apply plugin: 'com.android.application'
-apply plugin: 'retrolambda'
 
 android {
     compileSdkVersion 19
