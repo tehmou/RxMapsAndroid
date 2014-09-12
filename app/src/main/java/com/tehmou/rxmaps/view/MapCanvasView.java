@@ -5,25 +5,21 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.DragEvent;
-import android.view.MotionEvent;
 import android.view.View;
 
-import com.tehmou.rxmaps.pojo.MapTileBitmap;
 import com.tehmou.rxmaps.pojo.MapTileDrawable;
 import com.tehmou.rxmaps.utils.PointD;
-import com.tehmou.rxmaps.utils.ViewUtils;
+import com.tehmou.rxmaps.utils.RxFilters;
+import com.tehmou.rxmaps.utils.TouchDeltaListener;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 import rx.Observable;
 import rx.functions.Action1;
+import rx.functions.Func1;
 
 /**
  * Created by ttuo on 26/08/14.
@@ -50,9 +46,16 @@ public class MapCanvasView extends View {
     public MapCanvasView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
-        ViewUtils.TouchDelta touchDelta = new ViewUtils.TouchDelta();
-        setOnTouchListener(touchDelta);
-        this.touchDelta = touchDelta.getObservable();
+        TouchDeltaListener touchDeltaListener = new TouchDeltaListener();
+        setOnTouchListener(touchDeltaListener);
+        this.touchDelta = touchDeltaListener.getObservable().map(
+                new Func1<TouchDeltaListener.TouchDeltaEvent, PointD>() {
+                    @Override
+                    public PointD call(TouchDeltaListener.TouchDeltaEvent touchDeltaEvent) {
+                        return touchDeltaEvent.getDelta();
+                    }
+                })
+                .filter(RxFilters.nullFilter());
     }
 
     private void init() {
