@@ -33,7 +33,7 @@ public class MapCanvasView extends View {
 
     private Collection<MapTileDrawable> mapTiles;
     private Map<Integer, Bitmap> mapTileBitmaps;
-    final private Observable<PointD> touchDelta;
+    final private Observable<TouchDeltaListener.TouchDeltaEvent> touchDeltaEvents;
 
     public MapCanvasView(Context context) {
         this(context, null);
@@ -48,14 +48,7 @@ public class MapCanvasView extends View {
         init();
         TouchDeltaListener touchDeltaListener = new TouchDeltaListener();
         setOnTouchListener(touchDeltaListener);
-        this.touchDelta = touchDeltaListener.getObservable().map(
-                new Func1<TouchDeltaListener.TouchDeltaEvent, PointD>() {
-                    @Override
-                    public PointD call(TouchDeltaListener.TouchDeltaEvent touchDeltaEvent) {
-                        return touchDeltaEvent.getDelta();
-                    }
-                })
-                .filter(RxFilters.nullFilter());
+        this.touchDeltaEvents = touchDeltaListener.getObservable();
     }
 
     private void init() {
@@ -72,7 +65,7 @@ public class MapCanvasView extends View {
 
     public void setViewModel(final MapViewModel mapViewModel) {
         this.viewModel = mapViewModel;
-        mapViewModel.setTouchDelta(touchDelta);
+        mapViewModel.setTouchDeltaEvents(touchDeltaEvents);
         mapViewModel.getMapTiles().subscribe(setMapTiles);
         mapViewModel.getMapTileBitmaps().subscribe(setMapTileBitmaps);
     }

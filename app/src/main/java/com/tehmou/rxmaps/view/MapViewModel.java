@@ -10,13 +10,16 @@ import com.tehmou.rxmaps.utils.LatLngCalculator;
 import com.tehmou.rxmaps.utils.MapState;
 import com.tehmou.rxmaps.utils.MapTileUtils;
 import com.tehmou.rxmaps.utils.PointD;
+import com.tehmou.rxmaps.utils.RxFilters;
 import com.tehmou.rxmaps.utils.TileBitmapLoader;
+import com.tehmou.rxmaps.utils.TouchDeltaListener;
 
 import java.util.Collection;
 import java.util.Map;
 
 import rx.Observable;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func1;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -106,7 +109,15 @@ public class MapViewModel {
         viewSize.onNext(new PointD(width, height));
     }
 
-    public void setTouchDelta(Observable<PointD> touchDelta) {
-        touchDelta.subscribe(dragDelta);
+    public void setTouchDeltaEvents(Observable<TouchDeltaListener.TouchDeltaEvent> touchDeltaEvents) {
+        touchDeltaEvents.map(
+                new Func1<TouchDeltaListener.TouchDeltaEvent, PointD>() {
+                    @Override
+                    public PointD call(TouchDeltaListener.TouchDeltaEvent touchDeltaEvent) {
+                        return touchDeltaEvent.getDelta();
+                    }
+                })
+                .filter(RxFilters.nullFilter())
+                .subscribe(dragDelta);
     }
 }
