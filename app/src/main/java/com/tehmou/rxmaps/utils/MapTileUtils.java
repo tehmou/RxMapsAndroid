@@ -1,20 +1,15 @@
 package com.tehmou.rxmaps.utils;
 
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
-import android.util.Log;
-
-import com.tehmou.rxmaps.data.MapTileFileUtils;
 import com.tehmou.rxmaps.network.MapNetworkAdapter;
 import com.tehmou.rxmaps.pojo.MapTile;
 import com.tehmou.rxmaps.pojo.MapTileBitmap;
 import com.tehmou.rxmaps.pojo.MapTileDrawable;
-import com.tehmou.rxmaps.provider.MapTileBitmapsTable;
 import com.tehmou.rxmaps.provider.RxMapsContentProvider;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.util.Log;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -50,12 +45,7 @@ public class MapTileUtils {
     }
 
     static public Func1<MapState, Collection<MapTileDrawable>> calculateMapTiles(final double tileSizePx) {
-        return new Func1<MapState, Collection<MapTileDrawable>>() {
-            @Override
-            public Collection<MapTileDrawable> call(MapState mapState) {
-                return calculateMapTiles(tileSizePx, mapState.zoomLevel, mapState.viewSize, mapState.offset);
-            }
-        };
+        return mapState -> calculateMapTiles(tileSizePx, mapState.zoomLevel, mapState.viewSize, mapState.offset);
     }
 
     static private Collection<MapTileDrawable> calculateMapTiles(final double tileSizePx,
@@ -87,15 +77,10 @@ public class MapTileUtils {
 
     static public Func3<Integer, PointD, LatLng, MapState> combineToMapState(
             final CoordinateProjection coordinateProjection) {
-        return new Func3<Integer, PointD, LatLng, MapState>() {
-            @Override
-            public MapState call(Integer zoomLevel,
-                                              PointD viewSize,
-                                              LatLng center) {
-                final PointD offset = calculateOffset(
-                        coordinateProjection, zoomLevel, viewSize, center);
-                return new MapState(offset, viewSize, zoomLevel);
-            }
+        return (zoomLevel, viewSize, center) -> {
+            final PointD offset = calculateOffset(
+                    coordinateProjection, zoomLevel, viewSize, center);
+            return new MapState(offset, viewSize, zoomLevel);
         };
     }
 
@@ -119,43 +104,20 @@ public class MapTileUtils {
 
     static public Func1<MapTile, Observable<MapTileBitmap>> loadMapTile(
             final MapNetworkAdapter mapNetworkAdapter) {
-        return new Func1<MapTile, Observable<MapTileBitmap>>() {
-            @Override
-            public Observable<MapTileBitmap> call(final MapTile mapTile) {
-                return mapNetworkAdapter.getMapTile(
-                        mapTile.getZoom(), mapTile.getX(), mapTile.getY())
-                        .map(new Func1<Bitmap, MapTileBitmap>() {
-                            @Override
-                            public MapTileBitmap call(Bitmap bitmap) {
-                                return new MapTileBitmap(mapTile, bitmap);
-                            }
-                        })
-                        .onErrorResumeNext(new Func1<Throwable, Observable<? extends MapTileBitmap>>() {
-                            @Override
-                            public Observable<? extends MapTileBitmap> call(Throwable throwable) {
-                                Log.e(TAG, "Error loading tile (" + mapTile + ")", throwable);
-                                throwable.printStackTrace();
-                                return Observable.from(new MapTileBitmap(mapTile, null));
-                            }
-                        });
-            }
-        };
+        return mapTile -> mapNetworkAdapter.getMapTile(
+                mapTile.getZoom(), mapTile.getX(), mapTile.getY())
+                .map(bitmap -> new MapTileBitmap(mapTile, bitmap))
+                .onErrorResumeNext(throwable -> {
+                    Log.e(TAG, "Error loading tile (" + mapTile + ")", throwable);
+                    throwable.printStackTrace();
+                    return Observable.from(new MapTileBitmap(mapTile, null));
+                });
     }
 
     static public <T> Action1<T> logOnNext(final String tag) {
-        return new Action1<T>() {
-            @Override
-            public void call(T value) {
-                Log.d(TAG, tag + ": " + value);
-            }
-        };
+        return value -> Log.d(TAG, tag + ": " + value);
     }
 
     static final public Func1<Collection<MapTileDrawable>, Observable<MapTileDrawable>> expandCollection =
-            new Func1<Collection<MapTileDrawable>, Observable<MapTileDrawable>>() {
-                @Override
-                public Observable<MapTileDrawable> call(Collection<MapTileDrawable> mapTiles) {
-                    return Observable.from(mapTiles);
-                }
-            };
+            Observable::from;
 }
