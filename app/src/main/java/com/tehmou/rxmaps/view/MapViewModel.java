@@ -1,12 +1,15 @@
 package com.tehmou.rxmaps.view;
 
 import android.graphics.Bitmap;
+import android.util.Log;
+import android.util.Pair;
 
 import com.tehmou.rxmaps.pojo.MapTileDrawable;
 import com.tehmou.rxmaps.utils.CoordinateProjection;
 import com.tehmou.rxmaps.utils.LatLng;
 import com.tehmou.rxmaps.pojo.ZoomLevel;
 import com.tehmou.rxmaps.utils.LatLngCalculator;
+import com.tehmou.rxmaps.utils.Logger;
 import com.tehmou.rxmaps.utils.MapState;
 import com.tehmou.rxmaps.utils.MapTileUtils;
 import com.tehmou.rxmaps.utils.PointD;
@@ -18,8 +21,11 @@ import java.util.Collection;
 import java.util.Map;
 
 import rx.Observable;
+import rx.Observer;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.functions.Func2;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.Subject;
@@ -36,11 +42,13 @@ public class MapViewModel {
     final private Observable<LatLng> centerCoord;
     final private CoordinateProjection coordinateProjection;
     final private Subject<PointD, PointD> dragDelta;
+    final private Subject<Boolean, Boolean> isDragging;
 
     final private Observable<Map<Integer, Bitmap>> loadedTileBitmapsObservable;
 
     public MapViewModel(final int tileSizePx, final TileBitmapLoader tileBitmapLoader) {
         dragDelta = PublishSubject.create();
+        isDragging = PublishSubject.create();
         zoomLevel = new ZoomLevel(0);
         viewSize = PublishSubject.create();
         centerCoordSubject = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
@@ -54,22 +62,30 @@ public class MapViewModel {
                 latLngCalculator.getObservable())
                 .distinctUntilChanged();
 
-        final Subject<Collection<MapTileDrawable>, Collection<MapTileDrawable>> mapTilesSubject =
+        final BehaviorSubject<Collection<MapTileDrawable>> mapTilesSubject =
                 BehaviorSubject.create();
-        final Subject<Map<Integer, Bitmap>, Map<Integer, Bitmap>> loadedTileBitmapsSubject =
+        final PublishSubject<Map<Integer, Bitmap>> loadedTileBitmapsSubject =
                 PublishSubject.create();
 
         Observable<MapState> mapStateObservable =
                 Observable.combineLatest(
-                        zoomLevel.getObservable().doOnNext(MapTileUtils.logOnNext("zoomLevel")),
-                        viewSize.doOnNext(MapTileUtils.logOnNext("viewSize")),
-                        centerCoord.doOnNext(MapTileUtils.logOnNext("centerCoord")),
-                        MapTileUtils.combineToMapState(coordinateProjection)
-                )
+                        zoomLevel.getObservable()
+                                .distinctUntilChanged()
+                                .doOnNext(zoomLevel -> Log.d(TAG, "zoomLevel=" + zoomLevel)),
+                        viewSize
+                                .distinctUntilChanged()
+                                .doOnNext(viewSize -> Log.d(TAG, "viewSize=" + viewSize)),
+                        centerCoord
+                                .distinctUntilChanged()
+                                .doOnNext(centerCoord -> Log.d(TAG, "centerCoord=" + centerCoord)),
+                        MapTileUtils.combineToMapState(coordinateProjection))
+                        .distinctUntilChanged()
+                        .doOnNext(mapState -> Log.d(TAG, "mapState=" + mapState))
                 .cache();
 
         latLngCalculator.setMapStateObservable(mapStateObservable);
 
+        Log.d(TAG, "Create mapTiles observable");
         final Observable<Collection<MapTileDrawable>> mapTiles =
                 mapStateObservable
                         .map(MapTileUtils.calculateMapTiles(tileSizePx));
@@ -78,8 +94,31 @@ public class MapViewModel {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(mapTilesSubject);
 
-        mapTiles
-                .flatMap(tileBitmapLoader)
+        Pair<Boolean, Collection<MapTileDrawable>> initialValue =
+                new Pair<>(Boolean.FALSE, (Collection<MapTileDrawable>)null);
+
+        Observable<Pair<Boolean, Collection<MapTileDrawable>>> mapTilesDraggingPair =
+                Observable.combineLatest(
+                        Observable.merge(
+                                zoomLevel.getObservable().map(zoomLevel -> true),
+                                isDragging.map(_isDragging -> !_isDragging))
+                                .doOnNext(isShowingMapTiles ->
+                                        Log.d(TAG, "isShowingMapTiles=" + isShowingMapTiles)),
+                        mapTiles, Pair::new);
+
+        Observable<Map<Integer, Bitmap>> loadedMapTileObservable =
+                Observable.concat(Observable.just(initialValue), mapTilesDraggingPair)
+                        .flatMap(pair -> Observable.just(pair, initialValue))
+                        .doOnNext(pair -> Log.d(TAG, "isTure=" + pair.first))
+                        .distinctUntilChanged(booleanCollectionPair -> booleanCollectionPair.first)
+                        .filter(booleanCollectionPair -> booleanCollectionPair.first)
+                        .doOnNext(booleanCollectionPair -> {
+                            Log.d(TAG, "Updating tiles");
+                        })
+                        .map(booleanCollectionPair -> booleanCollectionPair.second)
+                        .flatMap(tileBitmapLoader);
+
+        loadedMapTileObservable
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(loadedTileBitmapsSubject);
 
@@ -110,14 +149,13 @@ public class MapViewModel {
     }
 
     public void setTouchDeltaEvents(Observable<TouchDeltaListener.TouchDeltaEvent> touchDeltaEvents) {
-        touchDeltaEvents.map(
-                new Func1<TouchDeltaListener.TouchDeltaEvent, PointD>() {
-                    @Override
-                    public PointD call(TouchDeltaListener.TouchDeltaEvent touchDeltaEvent) {
-                        return touchDeltaEvent.getDelta();
-                    }
-                })
+        touchDeltaEvents.map(TouchDeltaListener.TouchDeltaEvent::getDelta)
                 .filter(RxFilters.nullFilter())
                 .subscribe(dragDelta);
+        touchDeltaEvents.map(touchDeltaEvent ->
+                    !touchDeltaEvent.getType()
+                            .equals(TouchDeltaListener.TouchDeltaEvent.TouchDeltaEventType.END))
+                .distinctUntilChanged()
+                .subscribe(isDragging);
     }
 }

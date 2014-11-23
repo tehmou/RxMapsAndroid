@@ -13,6 +13,18 @@ public class PointD {
     }
 
     @Override
+    public int hashCode() {
+        int result = Double.valueOf(x).hashCode();
+        result += 31 * result + Double.valueOf(y).hashCode();
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof PointD && o.hashCode() == hashCode();
+    }
+
+    @Override
     public String toString() {
         return "PointD(" + x + ", " + y + ")";
     }
