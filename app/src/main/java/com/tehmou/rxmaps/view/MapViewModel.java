@@ -49,7 +49,7 @@ public class MapViewModel {
     public MapViewModel(final int tileSizePx, final TileBitmapLoader tileBitmapLoader) {
         dragDelta = PublishSubject.create();
         isDragging = PublishSubject.create();
-        zoomLevel = new ZoomLevel(0);
+        zoomLevel = new ZoomLevel(4);
         viewSize = PublishSubject.create();
         centerCoordSubject = BehaviorSubject.create(new LatLng(51.507351, -0.127758));
         coordinateProjection = new CoordinateProjection(tileSizePx);
